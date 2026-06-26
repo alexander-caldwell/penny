@@ -18,7 +18,7 @@ to configure for the common case.
 # 1. packages.yml  (private repo — SSH avoids token setup for `dbt deps`)
 packages:
   - git: "git@github.com:alex-caldwell-RA/penny.git"
-    revision: v0.1.1
+    revision: v0.1.2
 ```
 
 ```yaml
