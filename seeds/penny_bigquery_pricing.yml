@@ -1,0 +1,26 @@
+version: 2
+
+seeds:
+  - name: penny_bigquery_pricing
+    description: >
+      Reference table of BigQuery pricing tiers. Not used in cost calculations
+      (those read the penny_price_* variables for simplicity) — it exists for
+      documentation, a Looker lookup, and future pricing-comparison features.
+    columns:
+      - name: pricing_model
+        description: Pricing tier identifier (on_demand, editions_*, storage_*).
+        tests:
+          - not_null
+          - unique
+      - name: metric
+        description: What is being priced (query, slots, storage).
+      - name: unit
+        description: Billing unit (per_tb, per_slot_hour, per_gb_month).
+      - name: price_usd
+        description: Price in USD for one unit.
+        tests:
+          - not_null
+      - name: effective_date
+        description: Date this price became effective.
+      - name: notes
+        description: Free-text description of the tier.

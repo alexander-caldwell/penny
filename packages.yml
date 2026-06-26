@@ -1,0 +1,5 @@
+packages:
+  # dbt_utils.recency powers the source-freshness test on the staging model.
+  # RA consumer projects already ship dbt_utils, so this rarely adds install cost.
+  - package: dbt-labs/dbt_utils
+    version: [">=1.0.0", "<2.0.0"]

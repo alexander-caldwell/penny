@@ -1,0 +1,7 @@
+pricing_model,metric,unit,price_usd,effective_date,notes
+on_demand,query,per_tb,6.25,2024-01-01,Standard on-demand analysis pricing
+editions_standard,slots,per_slot_hour,0.04,2024-01-01,Standard edition
+editions_enterprise,slots,per_slot_hour,0.06,2024-01-01,Enterprise edition
+editions_enterprise_plus,slots,per_slot_hour,0.10,2024-01-01,Enterprise Plus edition
+storage_active,storage,per_gb_month,0.02,2024-01-01,Active logical storage
+storage_long_term,storage,per_gb_month,0.01,2024-01-01,Long-term storage (90+ days)

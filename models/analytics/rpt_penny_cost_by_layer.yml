@@ -1,0 +1,33 @@
+version: 2
+
+models:
+  - name: rpt_penny_cost_by_layer
+    description: >
+      Daily cost and usage aggregated to the Rittman Analytics methodology
+      layer, one row per layer per day. Built from rpt_penny_cost_summary.
+    columns:
+      - name: run_date
+        description: Calendar date of the runs being summarised.
+        tests:
+          - not_null
+      - name: methodology_layer
+        description: Rittman Analytics layer.
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['staging', 'integration', 'warehouse', 'analytics', 'unclassified']
+      - name: models_run
+        description: Distinct models that ran in this layer on this day.
+      - name: total_executions
+        description: Total executions across all models in this layer for the day.
+      - name: total_cost_usd
+        description: Total estimated cost in USD for the layer on this day.
+      - name: total_gb_billed
+        description: Total GiB billed for the layer on this day.
+      - name: avg_execution_seconds
+        description: Average per-model average execution time for the layer.
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - run_date
+            - methodology_layer

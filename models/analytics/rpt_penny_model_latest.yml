@@ -1,0 +1,44 @@
+version: 2
+
+models:
+  - name: rpt_penny_model_latest
+    description: >
+      One row per model with its latest state and recent trend, optimised for
+      external tool consumption (e.g. a future IDE extension). Carries last run,
+      30-day average and totals, week-over-week trend, and a traffic-light
+      anomaly status. Window metrics are anchored to current_date().
+    columns:
+      - name: model_name
+        description: Model identity (label or destination-table fallback).
+        tests:
+          - not_null
+          - unique
+      - name: methodology_layer
+        description: Rittman Analytics layer for the model.
+        tests:
+          - accepted_values:
+              values: ['staging', 'integration', 'warehouse', 'analytics', 'unclassified']
+      - name: last_run_date
+        description: Most recent date the model ran.
+        tests:
+          - not_null
+      - name: last_run_cost_usd
+        description: Total cost on the most recent run date.
+      - name: avg_cost_30d
+        description: Average daily cost over the last 30 days.
+      - name: trend_pct_7d
+        description: >
+          Week-over-week percentage change in cost (last 7 days vs the prior 7
+          days). Null when there is no prior-week cost to compare against.
+      - name: anomaly_status
+        description: >
+          Traffic-light status — red (latest day tripped the anomaly threshold),
+          amber (last run >1.5x the 30-day average), or green.
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['green', 'amber', 'red']
+      - name: total_cost_30d
+        description: Total cost over the last 30 days.
+      - name: total_runs_30d
+        description: Total executions over the last 30 days.

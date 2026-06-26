@@ -1,0 +1,80 @@
+name: 'penny'
+version: '1.0.0'
+config-version: 2
+
+require-dbt-version: [">=1.0.0", "<2.0.0"]
+
+# ── Paths ──────────────────────────────────────────────────────────────────
+model-paths: ["models"]
+macro-paths: ["macros"]
+seed-paths: ["seeds"]
+target-path: "target"
+clean-targets: ["target", "dbt_packages"]
+
+# ── Configuration variables ──────────────────────────────────────────────────
+# Override any of these in the consumer project's dbt_project.yml under `vars:`.
+vars:
+  # The BigQuery project and region whose INFORMATION_SCHEMA.JOBS Penny reads.
+  # Leave null to auto-detect from the dbt target (target.project /
+  # target.location) — the common case needs no config here. Set them only to
+  # read a project/region other than the one dbt is connected to. The region is
+  # the multi-region or region location, e.g. 'region-EU' or 'region-us'.
+  penny_bigquery_project: null
+  penny_bigquery_region: null
+
+  # Pricing mode: 'on_demand' (bytes-billed) or 'editions' (slot-based).
+  penny_pricing_model: "on_demand"
+
+  # On-demand pricing: USD per TiB billed (current BigQuery on-demand rate).
+  penny_price_per_tb: 6.25
+
+  # Editions pricing: USD per slot-hour. Only used when penny_pricing_model = 'editions'.
+  penny_price_per_slot_hour: 0.04
+
+  # Initial lookback window (days) used on first build / full refresh.
+  # Incremental runs only read partitions newer than the current max partition.
+  penny_lookback_days: 180
+
+  # Restrict ingestion to dbt-labelled jobs only (recommended).
+  penny_dbt_only: true
+
+  # Optional: restrict to a single dbt project name (matched against the
+  # project segment of dbt_node_id, e.g. model.<project>.<name>). null = no filter.
+  penny_dbt_project_filter: null
+
+  # Anomaly threshold multiplier — a model's daily cost is flagged when it
+  # exceeds this multiple of its trailing 30-day average.
+  penny_anomaly_threshold: 3
+
+# ── Model configuration ──────────────────────────────────────────────────────
+# Materialisations for staging/integration are set in-model (they need
+# partition_by + insert_overwrite). Here we set the shared schema and tags so
+# all Penny objects land together in one dataset.
+models:
+  penny:
+    +schema: penny
+    staging:
+      +tags: ["penny", "penny_staging"]
+    integration:
+      +tags: ["penny", "penny_integration"]
+    analytics:
+      +materialized: table
+      +tags: ["penny", "penny_analytics"]
+
+seeds:
+  penny:
+    +schema: penny
+    penny_bigquery_pricing:
+      +column_types:
+        price_usd: float64
+        effective_date: date
+
+# ── Run summary hook ──────────────────────────────────────────────────────────
+# Active when Penny is run as a standalone project (development). Consumer
+# projects must register this in their own dbt_project.yml — see README —
+# because on-run-end hooks only fire for the root project, not installed packages:
+#
+#   on-run-end:
+#     - "{{ penny.log_run_costs() }}"
+on-run-end:
+  - "{{ log_run_costs() }}"

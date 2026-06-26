@@ -1,0 +1,55 @@
+version: 2
+
+models:
+  - name: rpt_penny_cost_summary
+    description: >
+      Daily cost and usage summary, one row per model per day, with a trailing
+      30-day rolling average cost and an anomaly flag. The rolling average
+      excludes the current day and is used as the baseline for anomaly
+      detection against penny_anomaly_threshold.
+    columns:
+      - name: run_date
+        description: Calendar date of the runs being summarised.
+        tests:
+          - not_null
+      - name: model_name
+        description: Model identity (label or destination-table fallback).
+        tests:
+          - not_null
+      - name: methodology_layer
+        description: Rittman Analytics layer for the model.
+        tests:
+          - accepted_values:
+              values: ['staging', 'integration', 'warehouse', 'analytics', 'unclassified']
+      - name: total_runs
+        description: Number of executions of this model on this day.
+      - name: total_cost_usd
+        description: Total estimated cost in USD for the day.
+      - name: avg_cost_per_run_usd
+        description: Average cost per execution for the day.
+      - name: max_cost_per_run_usd
+        description: Most expensive single execution for the day.
+      - name: total_gb_billed
+        description: Total GiB billed across the day's executions.
+      - name: avg_execution_seconds
+        description: Average wall-clock execution time for the day.
+      - name: cache_hits
+        description: Number of cache-hit executions for the day.
+      - name: rolling_30d_avg_cost_usd
+        description: >
+          Average daily total_cost_usd over the preceding 30 days (excluding the
+          current day). Null until at least one prior day of history exists.
+      - name: is_cost_anomaly
+        description: >
+          True when total_cost_usd exceeds penny_anomaly_threshold times
+          rolling_30d_avg_cost_usd. False when no baseline exists.
+        tests:
+          - not_null
+          - accepted_values:
+              values: [true, false]
+              quote: false
+    tests:
+      - dbt_utils.unique_combination_of_columns:
+          combination_of_columns:
+            - run_date
+            - model_name

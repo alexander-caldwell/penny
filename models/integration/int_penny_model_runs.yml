@@ -1,0 +1,78 @@
+version: 2
+
+models:
+  - name: int_penny_model_runs
+    description: >
+      One row per dbt model execution (one BigQuery job), enriched with cost in
+      USD, methodology-layer classification, and derived size/error metrics.
+      Cost is computed by the shared penny.get_cost_usd macro using the pricing
+      mode set in penny_pricing_model. Free tier is not netted out — gross cost.
+    columns:
+      - name: job_id
+        description: BigQuery job id (grain).
+        tests:
+          - not_null
+          - unique
+      - name: created_at
+        description: Job creation timestamp. Partition key.
+        tests:
+          - not_null
+      - name: run_date
+        description: Calendar date of the run, derived from created_at.
+        tests:
+          - not_null
+      - name: completed_at
+        description: Job end timestamp.
+      - name: dbt_invocation_id
+        description: dbt invocation id grouping all jobs from one dbt run.
+      - name: dbt_node_id
+        description: dbt node unique id (model.<project>.<name>), if labelled.
+      - name: model_name
+        description: >
+          Model identity. dbt_model_name when labelled, otherwise the
+          destination table name as a fallback.
+      - name: is_label_fallback
+        description: True when model_name was derived from the destination table because no dbt_model_name label was present.
+      - name: methodology_layer
+        description: >
+          Rittman Analytics layer inferred from the model-name prefix:
+          staging (stg_), integration (int_), warehouse (dim_/fct_),
+          analytics (rpt_/mtr_), or unclassified.
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['staging', 'integration', 'warehouse', 'analytics', 'unclassified']
+      - name: execution_time_seconds
+        description: Wall-clock execution time in seconds.
+      - name: total_bytes_processed
+        description: Total bytes processed by the job.
+      - name: total_bytes_billed
+        description: Total bytes billed — basis for on-demand cost.
+      - name: gb_billed
+        description: total_bytes_billed expressed in GiB, rounded to 4 dp.
+      - name: tb_billed
+        description: total_bytes_billed expressed in TiB, rounded to 6 dp.
+      - name: total_slot_ms
+        description: Total slot milliseconds — basis for editions cost.
+      - name: cache_hit
+        description: True when the job was served from cache (zero cost).
+      - name: cost_usd
+        description: Estimated job cost in USD per the configured pricing mode, rounded to 6 dp.
+        tests:
+          - not_null
+      - name: pricing_model
+        description: Pricing mode used for this row's cost calculation.
+        tests:
+          - not_null
+          - accepted_values:
+              values: ['on_demand', 'editions']
+      - name: user_email
+        description: Identity that ran the job.
+      - name: destination_dataset
+        description: Destination dataset id, if any.
+      - name: destination_table
+        description: Destination table id, if any.
+      - name: error_message
+        description: Error message if the job failed, otherwise null.
+      - name: is_error
+        description: True when the job failed.
