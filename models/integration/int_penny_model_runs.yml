@@ -53,15 +53,24 @@ models:
       - name: tb_billed
         description: total_bytes_billed expressed in TiB, rounded to 6 dp.
       - name: total_slot_ms
-        description: Total slot milliseconds — basis for editions cost.
+        description: Total slot milliseconds — basis for editions/reserved cost.
+      - name: reservation_id
+        description: >
+          Reservation the job ran in, or null for on-demand jobs. In 'auto'
+          pricing mode this decides how the row is costed.
       - name: cache_hit
         description: True when the job was served from cache (zero cost).
       - name: cost_usd
-        description: Estimated job cost in USD per the configured pricing mode, rounded to 6 dp.
+        description: >
+          Estimated job cost in USD, rounded to 6 dp. In 'auto' mode each job is
+          priced by whether it ran in a reservation (null reservation_id →
+          on-demand bytes, otherwise slot-based); 'on_demand'/'editions' force one.
         tests:
           - not_null
       - name: pricing_model
-        description: Pricing mode used for this row's cost calculation.
+        description: >
+          Pricing basis applied to this row — 'on_demand' or 'editions'. In 'auto'
+          mode it reflects the per-job decision from reservation_id.
         tests:
           - not_null
           - accepted_values:

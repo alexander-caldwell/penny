@@ -27,8 +27,9 @@
         {% do return('') %}
     {% endif %}
 
-    {#- Reuse the shared cost formula over the invocation's aggregate totals. -#}
-    {% set cost_expr = penny.get_cost_usd('sum(total_bytes_billed)', 'sum(total_slot_ms)') %}
+    {#- Per-job cost expression, summed below so 'auto' mode prices each job by
+        its own reservation_id rather than one formula for the whole run. -#}
+    {% set cost_expr = penny.get_cost_usd('total_bytes_billed', 'total_slot_ms', 'reservation_id') %}
 
     {% set query %}
         with invocation_jobs as (
@@ -36,6 +37,7 @@
             select
                 total_bytes_billed,
                 total_slot_ms,
+                reservation_id,
                 (select label.value from unnest(labels) as label where label.key = 'dbt_model_name') as dbt_model_name,
                 destination_table.table_id as destination_table
             from {{ penny.penny_jobs_relation() }}
@@ -55,7 +57,7 @@
         select
             count(*) as models_run,
             round(sum(total_bytes_billed) / power(1024, 4), 4) as total_tb_billed,
-            {{ cost_expr }} as total_cost_usd,
+            round(sum({{ cost_expr }}), 6) as total_cost_usd,
             round(max(total_bytes_billed) / power(1024, 3), 2) as largest_gb,
             array_agg(
                 coalesce(dbt_model_name, destination_table, 'unknown')

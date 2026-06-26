@@ -35,7 +35,11 @@ models:
       - name: total_bytes_billed
         description: Total bytes billed — the basis for on-demand cost.
       - name: total_slot_ms
-        description: Total slot milliseconds consumed — the basis for editions cost.
+        description: Total slot milliseconds consumed — the basis for editions/reserved cost.
+      - name: reservation_id
+        description: >
+          Reservation the job ran in, or null for on-demand jobs. Drives per-job
+          pricing in 'auto' mode (null → on-demand bytes, set → slot-based).
       - name: cache_hit
         description: True when the query result was served from cache (zero bytes billed).
       - name: destination_project

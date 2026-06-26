@@ -13,7 +13,8 @@
 
 {#-
     One row per dbt model execution (one BigQuery job), enriched with:
-      - cost_usd via the shared penny.get_cost_usd formula (on-demand or editions)
+      - cost_usd via the shared penny.get_cost_usd formula (auto / on-demand /
+        editions; in 'auto' each job is priced by whether it ran in a reservation)
       - methodology_layer derived from the model-name prefix
       - gb_billed / tb_billed / is_error derived metrics
 
@@ -21,6 +22,8 @@
     destination table name when labels are not yet configured. Free tier is
     deliberately ignored for the MVP — gross cost is reported.
 -#}
+
+{%- set penny_mode = var('penny_pricing_model', 'auto') -%}
 
 with job_history as (
 
@@ -77,10 +80,17 @@ enriched as (
         round(total_bytes_billed / power(1024, 3), 4) as gb_billed,
         round(total_bytes_billed / power(1024, 4), 6) as tb_billed,
         total_slot_ms,
+        reservation_id,
         cache_hit,
 
-        {{ penny.get_cost_usd('total_bytes_billed', 'total_slot_ms') }} as cost_usd,
-        '{{ var("penny_pricing_model", "on_demand") }}' as pricing_model,
+        round({{ penny.get_cost_usd('total_bytes_billed', 'total_slot_ms', 'reservation_id') }}, 6) as cost_usd,
+        {% if penny_mode == 'on_demand' -%}
+            'on_demand'
+        {%- elif penny_mode == 'editions' -%}
+            'editions'
+        {%- else -%}
+            case when reservation_id is null then 'on_demand' else 'editions' end
+        {%- endif %} as pricing_model,
 
         user_email,
         destination_dataset,
@@ -108,6 +118,7 @@ select
     gb_billed,
     tb_billed,
     total_slot_ms,
+    reservation_id,
     cache_hit,
     cost_usd,
     pricing_model,

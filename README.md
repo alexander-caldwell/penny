@@ -364,7 +364,8 @@ limit 20
 | `gb_billed` / `tb_billed` | Size billed |
 | `total_slot_ms` / `execution_time_seconds` | Slot + wall-clock usage |
 | `cache_hit` / `is_error` | Cache served / failed |
-| `pricing_model` | `on_demand` or `editions` |
+| `pricing_model` | `on_demand` or `editions` (per-job in `auto` mode) |
+| `reservation_id` | Reservation the job ran in, or null for on-demand |
 
 </details>
 
@@ -373,14 +374,28 @@ limit 20
 ## How cost is calculated
 
 `get_cost_usd` is the single source of truth, shared by the integration model and
-the run-summary macro, so the console figure and the warehouse figure can't drift:
+the run-summary macro, so the console figure and the warehouse figure can't drift.
+Two formulas:
 
-- **on_demand** — `(total_bytes_billed / 1024^4) × penny_price_per_tb`
-- **editions** — `(total_slot_ms / 1000 / 3600) × penny_price_per_slot_hour`
+- **on-demand** — `(total_bytes_billed / 1024^4) × penny_price_per_tb`
+- **slot-based** — `(total_slot_ms / 1000 / 3600) × penny_price_per_slot_hour`
 
-Switch modes with the `penny_pricing_model` variable. The BigQuery 1 TB/month
-free tier is account-level and is **not** netted out in the MVP — Penny reports
-gross cost. Revisit as a monthly project-level adjustment in a later phase.
+`penny_pricing_model` picks which applies:
+
+| Mode | Behaviour |
+|------|-----------|
+| `auto` (default) | Per job — on-demand when the job's `reservation_id` is null, slot-based when it ran in a reservation. Correct for projects that **mix** on-demand and reserved billing (e.g. a reservation assigned to only some models). Resolves to the same answer as the fixed modes for pure on-demand or pure editions projects. |
+| `on_demand` | Force the on-demand formula for every job |
+| `editions` | Force the slot-based formula for every job |
+
+A caveat on reserved jobs: flat-rate/commitment reservations bill a fixed amount
+regardless of usage, so `slot_ms × rate` is an apportionment of that capacity by
+consumption, not a marginal cost. Set `penny_price_per_slot_hour` to your
+effective edition/commitment rate to make the allocation meaningful.
+
+The BigQuery 1 TB/month free tier is account-level and is **not** netted out in
+the MVP — Penny reports gross cost. Revisit as a monthly project-level adjustment
+in a later phase.
 
 ---
 
@@ -429,9 +444,9 @@ All variables go under `vars:` in the consumer project's `dbt_project.yml`.
 |----------|---------|---------|
 | `penny_bigquery_project` | `target.project` | Project whose jobs are read; auto-detected from the dbt target |
 | `penny_bigquery_region` | `target.location` | INFORMATION_SCHEMA location; auto-detected from the dbt target |
-| `penny_pricing_model` | `on_demand` | `on_demand` or `editions` |
-| `penny_price_per_tb` | `6.25` | USD per TiB billed (on-demand) |
-| `penny_price_per_slot_hour` | `0.04` | USD per slot-hour (editions) |
+| `penny_pricing_model` | `auto` | `auto` (per-job by reservation), `on_demand`, or `editions` |
+| `penny_price_per_tb` | `6.25` | USD per TiB billed (on-demand jobs) |
+| `penny_price_per_slot_hour` | `0.04` | USD per slot-hour (reserved/editions jobs) |
 | `penny_lookback_days` | `180` | First-build / full-refresh window |
 | `penny_dbt_only` | `true` | Ingest dbt-labelled jobs only |
 | `penny_dbt_project_filter` | `null` | Restrict to one dbt project name |

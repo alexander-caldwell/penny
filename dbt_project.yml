@@ -22,13 +22,18 @@ vars:
   penny_bigquery_project: null
   penny_bigquery_region: null
 
-  # Pricing mode: 'on_demand' (bytes-billed) or 'editions' (slot-based).
-  penny_pricing_model: "on_demand"
+  # Pricing mode:
+  #   'auto'      — per job: on-demand when reservation_id is null, slot-based
+  #                 when the job ran in a reservation (handles mixed projects)
+  #   'on_demand' — force bytes-billed pricing for every job
+  #   'editions'  — force slot-based pricing for every job
+  penny_pricing_model: "auto"
 
   # On-demand pricing: USD per TiB billed (current BigQuery on-demand rate).
   penny_price_per_tb: 6.25
 
-  # Editions pricing: USD per slot-hour. Only used when penny_pricing_model = 'editions'.
+  # Slot-based pricing: USD per slot-hour. Used for reserved jobs in 'auto' mode
+  # and for every job in 'editions' mode. Set to your effective edition rate.
   penny_price_per_slot_hour: 0.04
 
   # Initial lookback window (days) used on first build / full refresh.
