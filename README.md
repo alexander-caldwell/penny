@@ -15,9 +15,9 @@ Three steps. Project and region are read from your dbt target, so there's nothin
 to configure for the common case.
 
 ```yaml
-# 1. packages.yml  (private repo — SSH avoids token setup for `dbt deps`)
+# 1. packages.yml
 packages:
-  - git: "git@github.com:alex-caldwell-RA/penny.git"
+  - git: "https://github.com/alex-caldwell-RA/penny.git"
     revision: v0.1.2
 ```
 
