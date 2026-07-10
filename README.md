@@ -482,3 +482,9 @@ reflect your contracted rate rather than list price.
 
 Dry-run estimation, dbt contract awareness, CI cost gates, Slack/email alerting,
 LookML/dashboard layer, and the VS Code extension are not part of this MVP.
+
+---
+
+## License
+
+MIT — see [LICENSE](LICENSE).
