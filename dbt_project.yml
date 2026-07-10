@@ -75,11 +75,9 @@ seeds:
         effective_date: date
 
 # ── Run summary hook ──────────────────────────────────────────────────────────
-# Active when Penny is run as a standalone project (development). Consumer
-# projects must register this in their own dbt_project.yml — see README —
-# because on-run-end hooks only fire for the root project, not installed packages:
+# Deliberately NOT registered here. dbt runs on-run-end hooks from installed
+# packages too, so a hook in this file would double-fire alongside the consumer's
+# own registration. Consumer projects register it themselves (see README):
 #
 #   on-run-end:
 #     - "{{ penny.log_run_costs() }}"
-on-run-end:
-  - "{{ log_run_costs() }}"

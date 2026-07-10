@@ -39,7 +39,12 @@ identified as (
 
     select
         *,
-        coalesce(dbt_model_name, destination_table) as model_name,
+        -- Fall back to the destination table when the model isn't labelled, and
+        -- strip dbt's incremental temp suffix so a model's __dbt_tmp build job
+        -- folds into the model itself instead of becoming a phantom row.
+        regexp_replace(
+            coalesce(dbt_model_name, destination_table), r'__dbt_tmp$', ''
+        ) as model_name,
         dbt_model_name is null as is_label_fallback
     from job_history
 
