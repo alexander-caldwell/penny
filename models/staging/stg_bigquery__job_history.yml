@@ -69,5 +69,6 @@ models:
           project configures +labels.
       - name: dbt_node_id
         description: >
-          dbt node unique id from job labels (model.<project>.<name>). Null until
-          the consumer project configures +labels.
+          dbt node unique id from job labels. Prefers Penny's dbt_node_id label,
+          falling back to the standard node_id label that dbt's default
+          query-comment emits under job-label: true. Null when neither is present.

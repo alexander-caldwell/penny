@@ -26,14 +26,18 @@ models:
       - name: dbt_invocation_id
         description: dbt invocation id grouping all jobs from one dbt run.
       - name: dbt_node_id
-        description: dbt node unique id (model.<project>.<name>), if labelled.
+        description: >
+          dbt node unique id. Penny's dbt_node_id label when configured, else the
+          standard node_id label from dbt's default job-label query comment
+          (BigQuery sanitises dots to underscores in either case).
       - name: model_name
         description: >
-          Model identity. dbt_model_name when labelled, otherwise the
-          destination table name as a fallback (with any trailing __dbt_tmp
-          incremental suffix stripped so temp-build jobs fold into their model).
-          Jobs with no label and no destination table (introspection, hooks,
-          package operations) bucket as 'unknown'. Never null.
+          Model identity, in preference order: dbt_model_name label, then the
+          node_id label with its resource/project prefix stripped, then the
+          destination table name, then 'unknown' for jobs that write nowhere
+          (introspection, hooks, package operations). The trailing __dbt_tmp
+          incremental suffix is stripped so temp-build jobs fold into their
+          model. Never null.
       - name: is_label_fallback
         description: True when model_name was derived from the destination table because no dbt_model_name label was present.
       - name: methodology_layer

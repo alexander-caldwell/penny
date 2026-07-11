@@ -25,6 +25,18 @@
 
 {%- set penny_mode = var('penny_pricing_model', 'auto') -%}
 
+{#- Regex that strips the resource-type prefix (and, when penny_dbt_project_name
+    is set, the sanitised project prefix) off a `node_id` job label so it reads
+    as a clean model name. dbt's default query-comment stamps node_id as
+    model_<project>_<name> (dots sanitised to underscores). -#}
+{%- set penny_project = var('penny_dbt_project_name', none) -%}
+{%- set node_types = 'model|snapshot|seed|test|unit_test|analysis|operation' -%}
+{%- if penny_project -%}
+    {%- set node_id_prefix = '^(' ~ node_types ~ ')_' ~ (penny_project | lower | replace('-', '_')) ~ '_' -%}
+{%- else -%}
+    {%- set node_id_prefix = '^(' ~ node_types ~ ')_' -%}
+{%- endif -%}
+
 with job_history as (
 
     select * from {{ ref('stg_bigquery__job_history') }}
@@ -39,13 +51,23 @@ identified as (
 
     select
         *,
-        -- Fall back to the destination table when the model isn't labelled, and
-        -- strip dbt's incremental temp suffix so a model's __dbt_tmp build job
-        -- folds into the model itself instead of becoming a phantom row. Final
-        -- 'unknown' fallback covers dbt jobs that write nowhere (introspection
-        -- queries, hooks, package operations) so model_name is never null.
+        -- Model identity, in order of preference:
+        --   1. dbt_model_name label (cleanest, when configured)
+        --   2. node_id label with its resource/project prefix stripped
+        --      (covers projects using dbt's default job-label query comment)
+        --   3. destination table name
+        --   4. 'unknown' — dbt jobs that write nowhere (introspection, hooks,
+        --      package operations) so model_name is never null
+        -- The trailing __dbt_tmp incremental suffix is stripped so a model's
+        -- temp-build job folds into the model instead of becoming a phantom row.
         regexp_replace(
-            coalesce(dbt_model_name, destination_table, 'unknown'), r'__dbt_tmp$', ''
+            coalesce(
+                dbt_model_name,
+                nullif(regexp_replace(dbt_node_id, r'{{ node_id_prefix }}', ''), ''),
+                destination_table,
+                'unknown'
+            ),
+            r'__dbt_tmp$', ''
         ) as model_name,
         dbt_model_name is null as is_label_fallback
     from job_history

@@ -18,7 +18,7 @@ to configure for the common case.
 # 1. packages.yml
 packages:
   - git: "https://github.com/alex-caldwell-RA/penny.git"
-    revision: v0.1.4
+    revision: v0.1.5
 ```
 
 ```yaml
@@ -101,8 +101,18 @@ deduplicates automatically.
 ### Labelling jobs so cost maps to models
 
 By default dbt stamps BigQuery jobs only with `dbt_invocation_id`, so Penny can
-total a run but not split it by model. To attribute per model, the jobs need a
-`dbt_model_name` label. Two ways, depending on scope.
+total a run but not split it by model. To attribute per model, the jobs need
+model identity in their labels. Three ways, depending on what you already have.
+
+**Already using `query-comment: job-label: true`? Nothing to do.** dbt's default
+query comment stamps a `node_id` label on every job, and Penny reads it
+automatically as a fallback — you get per-model grouping with zero config.
+BigQuery sanitises that label to `model_<project>_<name>`, so for clean,
+classifiable names set `penny_dbt_project_name` to your dbt project name and
+Penny strips the `model_<project>_` prefix off. Leave it null and grouping still
+works, the names are just prefixed.
+
+If you're *not* already labelling jobs, two ways to start, depending on scope.
 
 **Project-wide (recommended) — the query-comment hook.** Add to your
 `dbt_project.yml`. It's config-only — no SQL, no schema, no data impact — and is
@@ -450,6 +460,7 @@ All variables go under `vars:` in the consumer project's `dbt_project.yml`.
 | `penny_lookback_days` | `180` | First-build / full-refresh window |
 | `penny_dbt_only` | `true` | Ingest dbt-labelled jobs only |
 | `penny_dbt_project_filter` | `null` | Restrict to one dbt project name |
+| `penny_dbt_project_name` | `null` | Your dbt project name; strips the `model_<project>_` prefix off the fallback `node_id` label for clean names |
 | `penny_anomaly_threshold` | `3` | Flag daily cost > N× rolling 30-day average |
 
 ---

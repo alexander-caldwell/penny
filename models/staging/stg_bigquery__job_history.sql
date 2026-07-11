@@ -80,7 +80,12 @@ labelled as (
         destination_table.table_id as destination_table,
         (select label.value from unnest(labels) as label where label.key = 'dbt_invocation_id') as dbt_invocation_id,
         (select label.value from unnest(labels) as label where label.key = 'dbt_model_name') as dbt_model_name,
-        (select label.value from unnest(labels) as label where label.key = 'dbt_node_id') as dbt_node_id
+        -- Prefer Penny's dbt_node_id label; fall back to the standard `node_id`
+        -- label that dbt's default query-comment emits under job-label: true.
+        coalesce(
+            (select label.value from unnest(labels) as label where label.key = 'dbt_node_id'),
+            (select label.value from unnest(labels) as label where label.key = 'node_id')
+        ) as dbt_node_id
     from jobs
 
 ),

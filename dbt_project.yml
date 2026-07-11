@@ -47,6 +47,14 @@ vars:
   # project segment of dbt_node_id, e.g. model.<project>.<name>). null = no filter.
   penny_dbt_project_filter: null
 
+  # Optional: your dbt project name. Only used when Penny falls back to the
+  # standard `node_id` job label (emitted by dbt's default query-comment with
+  # job-label: true). BigQuery sanitises that label to `model_<project>_<name>`,
+  # so setting this lets Penny strip the `model_<project>_` prefix back off for
+  # clean, classifiable model names. Leave null and Penny still groups correctly
+  # by node id — the names are just prefixed. null = no stripping.
+  penny_dbt_project_name: null
+
   # Anomaly threshold multiplier — a model's daily cost is flagged when it
   # exceeds this multiple of its trailing 30-day average.
   penny_anomaly_threshold: 3
