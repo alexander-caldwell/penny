@@ -32,6 +32,8 @@ models:
           Model identity. dbt_model_name when labelled, otherwise the
           destination table name as a fallback (with any trailing __dbt_tmp
           incremental suffix stripped so temp-build jobs fold into their model).
+          Jobs with no label and no destination table (introspection, hooks,
+          package operations) bucket as 'unknown'. Never null.
       - name: is_label_fallback
         description: True when model_name was derived from the destination table because no dbt_model_name label was present.
       - name: methodology_layer

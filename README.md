@@ -18,7 +18,7 @@ to configure for the common case.
 # 1. packages.yml
 packages:
   - git: "https://github.com/alex-caldwell-RA/penny.git"
-    revision: v0.1.3
+    revision: v0.1.4
 ```
 
 ```yaml

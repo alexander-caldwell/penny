@@ -41,9 +41,11 @@ identified as (
         *,
         -- Fall back to the destination table when the model isn't labelled, and
         -- strip dbt's incremental temp suffix so a model's __dbt_tmp build job
-        -- folds into the model itself instead of becoming a phantom row.
+        -- folds into the model itself instead of becoming a phantom row. Final
+        -- 'unknown' fallback covers dbt jobs that write nowhere (introspection
+        -- queries, hooks, package operations) so model_name is never null.
         regexp_replace(
-            coalesce(dbt_model_name, destination_table), r'__dbt_tmp$', ''
+            coalesce(dbt_model_name, destination_table, 'unknown'), r'__dbt_tmp$', ''
         ) as model_name,
         dbt_model_name is null as is_label_fallback
     from job_history
