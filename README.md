@@ -17,7 +17,7 @@ to configure for the common case.
 ```yaml
 # 1. packages.yml
 packages:
-  - git: "https://github.com/alex-caldwell-RA/penny.git"
+  - git: "https://github.com/alexander-caldwell/penny.git"
     revision: v0.1.5
 ```
 
