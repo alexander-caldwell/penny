@@ -18,7 +18,7 @@ to configure for the common case.
 # 1. packages.yml
 packages:
   - git: "https://github.com/alexander-caldwell/penny.git"
-    revision: v0.1.9
+    revision: v0.1.10
 ```
 
 ```yaml
@@ -103,6 +103,11 @@ because Penny's generic tests nest their arguments under the `arguments:`
 property, which was added in that version. The upper bound is `<3.0.0`, so the
 Fusion engine (which reports as v2) does not flag Penny as incompatible.
 
+Install v0.1.9 or later. Versions v0.1.6 to v0.1.8 read a `ddl_target_table`
+column that `INFORMATION_SCHEMA.JOBS` does not have in every region, including
+the US multi-region, and fail on the first model with `Unrecognized name:
+ddl_target_table`.
+
 Fusion is **not yet tested** against Penny. The mechanism Penny depends on is
 BigQuery job labels from `query-comment: job-label: true`, and BigQuery support
 in Fusion is still Preview. The run-summary hook reads dbt's `results` object,
@@ -147,6 +152,10 @@ first test), set labels in the model itself, where `this` is in scope:
 ```sql
 {{ config(labels = {'dbt_model_name': this.name, 'dbt_node_id': this.identifier}) }}
 ```
+
+This route cannot set `dbt_project_name`: the project name is not available
+in model config. If you use `penny_dbt_project_filter`, prefer the
+query-comment hook above, which sets it.
 
 Note `this.name` is the *aliased* table name (e.g. `partnerships_fact`), whereas
 the query-comment hook captures the dbt node name (e.g. `wh_partnerships_fact`).
@@ -552,7 +561,7 @@ own `dbt_project.yml` for standalone development only. Consumer projects must ad
 `"{{ penny.log_run_costs() }}"` to their own `on-run-end` — the `penny.` prefix
 is required.
 
-**`penny_dbt_project_filter` returns few or no rows.** Before v0.1.6 the filter
+**`penny_dbt_project_filter` returns few or no rows.** Before v0.1.7 the filter
 matched nothing at all, because it parsed the node id in a form BigQuery never
 stores. It now matches the `dbt_project_name` job label, which only exists on
 jobs run since you upgraded, and falls back to the node-id prefix for older

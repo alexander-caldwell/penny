@@ -118,7 +118,13 @@ the `node_id` label with its `model_<project>_` prefix stripped (set
 `penny_dbt_project_name` to enable that stripping), then the job's target table,
 then `'unknown'`.
 
-Two traps here:
+The target-table step skips BigQuery's anonymous result tables, matched on
+`^anon[0-9a-f]`. BigQuery writes every destination-less query result to one, so
+without the skip each test and introspective select became its own one-off
+model: a 20-model project reported 320. Those jobs resolve to `'unknown'` and
+`penny_job_role` calls them overhead.
+
+Three traps here:
 
 - `models: +labels: {dbt_model_name: "{{ this.name }}"}` in `dbt_project.yml`
   **fails**. That file is rendered with no model context, so `this` is undefined
@@ -127,6 +133,11 @@ Two traps here:
 - With no labels at all, the model name falls back to the target table, which
   makes a post-hook writing elsewhere look like a build of its own model.
   `penny_job_role` documents this limit; do not try to fix it in SQL.
+- The project filter (`penny_dbt_project_filter`) means the **root** dbt project,
+  the one that ran dbt, not the package a model is defined in. Penny's own models
+  therefore count as part of the consumer's project. `penny_query_comment` stamps
+  that as `dbt_project_name`; `penny_project_filter` falls back to prefix-matching
+  the sanitised node id when the label is absent.
 
 ### The on-run-end hook is not registered here
 
