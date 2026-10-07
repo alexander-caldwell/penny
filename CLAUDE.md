@@ -46,6 +46,13 @@ For the `on-run-end` hook, extract the `{% set query %}` and `{% set summary %}`
 blocks by regex and render them separately. The summary block's whitespace is
 load-bearing, so inspect the rendered console output rather than assuming.
 
+sqlglot only checks that the SQL parses. It cannot know which columns
+`INFORMATION_SCHEMA.JOBS` actually has, and that view differs by region: it has
+no `ddl_target_table` in the US multi-region, which once shipped a release that
+failed on the first model with `Unrecognized name: ddl_target_table`. Any change
+touching the columns read from `JOBS` must also be dry-run against BigQuery,
+which costs nothing and resolves every name.
+
 ## Architecture
 
 ### Data flow

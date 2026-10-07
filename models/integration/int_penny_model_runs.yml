@@ -113,7 +113,7 @@ models:
         description: Destination dataset id, if any.
       - name: target_table
         description: >
-          Table this job wrote (destination table, or DDL target). Compared with
+          Table this job wrote, from the job's destination table. Compared with
           model_name to decide job_role.
       - name: destination_table
         description: Destination table id, if any.

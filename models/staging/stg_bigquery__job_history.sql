@@ -47,7 +47,6 @@ with jobs as (
         reservation_id,
         error_result,
         destination_table,
-        ddl_target_table,
         labels
     from {{ penny.penny_jobs_relation() }}
     where state = 'DONE'
@@ -80,10 +79,15 @@ labelled as (
         destination_table.project_id as destination_project,
         destination_table.dataset_id as destination_dataset,
         destination_table.table_id as destination_table,
-        -- The table this job wrote. CTAS/DML populate destination_table; CREATE
-        -- VIEW and other DDL populate ddl_target_table instead. Coalescing gives
-        -- one column that the job-role classifier can compare to the model name.
-        coalesce(destination_table.table_id, ddl_target_table.table_id) as target_table,
+        -- The table this job wrote, as one column the job-role classifier can
+        -- compare to the model name. destination_table covers every statement
+        -- that writes: CTAS, DML, and DDL including CREATE VIEW. Do not add
+        -- ddl_target_table here. That column is absent from the JOBS view in at
+        -- least the US multi-region, so referencing it fails the model outright
+        -- with "Unrecognized name: ddl_target_table", and it gains nothing: a
+        -- 90-day sample found destination_table populated on all 35 CREATE_VIEW
+        -- jobs and on every other CREATE statement.
+        destination_table.table_id as target_table,
         (select label.value from unnest(labels) as label where label.key = 'dbt_invocation_id') as dbt_invocation_id,
         (select label.value from unnest(labels) as label where label.key = 'dbt_model_name') as dbt_model_name,
         -- Prefer Penny's dbt_node_id label; fall back to the standard `node_id`

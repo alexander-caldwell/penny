@@ -8,7 +8,7 @@
       1. dbt_model_name label (cleanest, when the consumer project sets it)
       2. dbt_node_id label with its resource-type and project prefix stripped,
          which covers projects using dbt's default job-label query comment
-      3. the job's target table (destination table, or DDL target), unless that
+      3. the job's destination table, unless that
          table is one of BigQuery's anonymous result tables (see below)
       4. 'unknown', so the result is never null
 

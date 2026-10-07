@@ -92,7 +92,9 @@
                 total_slot_ms,
                 reservation_id,
                 statement_type,
-                coalesce(destination_table.table_id, ddl_target_table.table_id) as target_table,
+                -- destination_table only. ddl_target_table does not exist in
+                -- every region's JOBS view; see stg_bigquery__job_history.
+                destination_table.table_id as target_table,
                 (select label.value from unnest(labels) as label where label.key = 'dbt_model_name') as dbt_model_name,
                 coalesce(
                     (select label.value from unnest(labels) as label where label.key = 'dbt_node_id'),

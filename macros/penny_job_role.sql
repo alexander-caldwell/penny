@@ -21,7 +21,8 @@
 
     A job is a build when both are true:
       1. its statement_type writes data or DDL, and
-      2. its target table (destination, or DDL target for CREATE statements),
+      2. its target table (the job's destination table, which BigQuery fills
+         in for DDL as well as for CTAS and DML),
          with any __dbt_tmp suffix stripped, equals the resolved model name.
 
     Known limits:
