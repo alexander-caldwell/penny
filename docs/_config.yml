@@ -1,0 +1,10 @@
+# GitHub Pages configuration. The site is published from the /docs folder on
+# main, so every .md file here with front matter becomes a page.
+title: Penny
+description: Model-level BigQuery cost tracking for dbt
+theme: jekyll-theme-cayman
+show_downloads: false
+
+# Nothing outside /docs is part of the site.
+exclude:
+  - "*.sql"

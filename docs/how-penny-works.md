@@ -1,4 +1,7 @@
-# How Penny works
+---
+title: How Penny works
+description: What Penny reads, how a job is traced to a model, and how cost is worked out
+---
 
 Penny is a dbt package that tells you what each of your dbt models costs to run
 on BigQuery — per model, per day, with trends and anomalies — and prints a cost
@@ -38,6 +41,10 @@ needs the model's identity in a label. Penny reads that in order of preference:
    Penny reads it as a fallback and strips it back to a model name
 3. **target table** — the table the job wrote to, if there's no label
 4. **`'unknown'`** — for jobs that write nowhere (introspection queries)
+
+BigQuery's own anonymous result tables (`anon<hex>`) are skipped at step 3.
+Every query without an explicit destination writes to one, so counting them
+would turn each test and introspective select into a one-off "model".
 
 So Penny works with zero label setup (attributing by table name), and gets
 sharper the more identity you give it. It also folds dbt's incremental temp
