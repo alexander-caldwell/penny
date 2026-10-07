@@ -1,5 +1,7 @@
 # 🪙 Penny — model-level cost tracking for dbt on BigQuery
 
+Documentation site: <https://alexander-caldwell.github.io/penny/>
+
 Penny reads BigQuery job metadata, attributes the cost of every job to the dbt
 model that ran it, and surfaces daily trends and anomalies. It also prints a
 cost summary to the console after every `dbt run`. Named for the idea that every
