@@ -2,6 +2,9 @@
 
 Documentation site: <https://alexander-caldwell.github.io/penny/>
 
+Built by [Alex Caldwell](https://github.com/alexander-caldwell) at
+[Rittman Analytics](https://rittmananalytics.com).
+
 Penny reads BigQuery job metadata, attributes the cost of every job to the dbt
 model that ran it, and surfaces daily trends and anomalies. It also prints a
 cost summary to the console after every `dbt run`. Named for the idea that every
