@@ -8,8 +8,19 @@
       1. dbt_model_name label (cleanest, when the consumer project sets it)
       2. dbt_node_id label with its resource-type and project prefix stripped,
          which covers projects using dbt's default job-label query comment
-      3. the job's target table (destination table, or DDL target)
+      3. the job's target table (destination table, or DDL target), unless that
+         table is one of BigQuery's anonymous result tables (see below)
       4. 'unknown', so the result is never null
+
+    Anonymous result tables are excluded from step 3. BigQuery writes the result
+    of any query with no explicit destination into a table named `anon<hex>` in
+    a dataset named `_<hex>`. That covers dbt's test queries and every
+    introspective select, so without the exclusion each one becomes its own
+    one-off "model": a project with roughly 20 models reported 320, 198 of them
+    named `anon0097022e_b3ff_...` and similar. Excluded, they fall through to
+    'unknown', and penny_job_role then classifies them as overhead, which is
+    what they are. The `^anon[0-9a-f]` test is safe against real table names:
+    an ordinary table such as `anonymous_users` fails it at the `y`.
 
     The trailing __dbt_tmp suffix is stripped, so an incremental model's temp
     build folds into the model instead of appearing as a separate model.
@@ -33,7 +44,7 @@
         "regexp_replace(coalesce("
         ~ dbt_model_name ~ ", "
         ~ "nullif(regexp_replace(" ~ dbt_node_id ~ ", r'" ~ node_id_prefix ~ "', ''), ''), "
-        ~ target_table ~ ", "
+        ~ "if(regexp_contains(coalesce(" ~ target_table ~ ", ''), r'^anon[0-9a-f]'), null, " ~ target_table ~ "), "
         ~ "'unknown'), r'__dbt_tmp$', '')"
     -}}
 {% endmacro %}

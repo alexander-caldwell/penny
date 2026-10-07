@@ -18,7 +18,7 @@ to configure for the common case.
 # 1. packages.yml
 packages:
   - git: "https://github.com/alexander-caldwell/penny.git"
-    revision: v0.1.7
+    revision: v0.1.8
 ```
 
 ```yaml
@@ -560,6 +560,14 @@ jobs. The staging model is incremental and does not reprocess history, so run
 `dbt run --select penny --full-refresh` to re-read and re-filter the last
 `penny_lookback_days` of jobs. The filter names the project that ran dbt, so
 Penny's own models are included, not excluded.
+
+**Models named `anon...` that you do not recognise.** Fixed in v0.1.8. BigQuery
+writes the result of any query with no explicit destination into a table named
+`anon<hex>`, and Penny used to treat that table name as a model name when a job
+carried no dbt label. Every test query and introspective select became its own
+one-off model. Penny now ignores those tables and counts such jobs as overhead.
+The staging and integration models are incremental, so run
+`dbt run --select penny --full-refresh` to clear the rows already stored.
 
 **`Access Denied` reading INFORMATION_SCHEMA.JOBS.** The service account lacks
 `bigquery.jobs.list`. Grant `BigQuery User` on the project.
