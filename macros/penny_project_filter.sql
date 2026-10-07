@@ -45,8 +45,14 @@
     id. Shared by penny_model_name (which strips the prefix) and
     penny_project_filter (which matches on it) so the two never drift apart.
 
+    `sql_operation` is in the list because dbt's unique_id for a run-operation
+    is `sql operation.<project>.<name>`. The space is sanitised to an underscore
+    alongside the dots, so the stored label reads
+    `sql_operation_<project>_<name>`. It is listed before `operation` only for
+    readability; the match is anchored, so order does not change the result.
+
     Returns a regex alternation fragment, not a list.
 -#}
 {% macro penny_node_types() %}
-    {{- 'model|snapshot|seed|test|unit_test|analysis|operation' -}}
+    {{- 'model|snapshot|seed|test|unit_test|analysis|sql_operation|operation' -}}
 {% endmacro %}
