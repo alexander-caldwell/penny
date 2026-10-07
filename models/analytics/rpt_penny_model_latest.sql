@@ -38,7 +38,7 @@ windowed as (
         model_name,
         round(avg(case when run_date >= date_sub(current_date(), interval 30 day) then total_cost_usd end), 6) as avg_cost_30d,
         round(sum(case when run_date >= date_sub(current_date(), interval 30 day) then total_cost_usd else 0 end), 6) as total_cost_30d,
-        sum(case when run_date >= date_sub(current_date(), interval 30 day) then total_runs else 0 end) as total_runs_30d,
+        sum(case when run_date >= date_sub(current_date(), interval 30 day) then total_jobs else 0 end) as total_jobs_30d,
         sum(case when run_date >= date_sub(current_date(), interval 7 day) then total_cost_usd else 0 end) as cost_last_7d,
         sum(
             case
@@ -62,7 +62,7 @@ final as (
         last_run.last_run_cost_usd,
         windowed.avg_cost_30d,
         windowed.total_cost_30d,
-        windowed.total_runs_30d,
+        windowed.total_jobs_30d,
         case
             when windowed.cost_prior_7d is null or windowed.cost_prior_7d = 0 then null
             else round(((windowed.cost_last_7d - windowed.cost_prior_7d) / windowed.cost_prior_7d) * 100, 2)
@@ -89,5 +89,5 @@ select
     trend_pct_7d,
     anomaly_status,
     total_cost_30d,
-    total_runs_30d
+    total_jobs_30d
 from final

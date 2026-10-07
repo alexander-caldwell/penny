@@ -12,30 +12,23 @@
 }}
 
 {#-
-    One row per dbt model execution (one BigQuery job), enriched with:
+    One row per BigQuery job. This is NOT one row per model: dbt stamps the
+    same dbt_model_name label on a model's pre-hooks and post-hooks as on its
+    build statement, so one model can produce many rows here. Use `job_role` to
+    tell them apart, and count distinct model_name (not rows) for models run.
+
+    Each row is enriched with:
       - cost_usd via the shared penny.get_cost_usd formula (auto / on-demand /
         editions; in 'auto' each job is priced by whether it ran in a reservation)
       - methodology_layer derived from the model-name prefix
+      - job_role ('build' / 'hook' / 'overhead') from penny.penny_job_role
       - gb_billed / tb_billed / is_error derived metrics
 
-    Model identity prefers the dbt_model_name label and falls back to the
-    destination table name when labels are not yet configured. Free tier is
+    Model identity is resolved by penny.penny_model_name. Free tier is
     deliberately ignored for the MVP — gross cost is reported.
 -#}
 
 {%- set penny_mode = var('penny_pricing_model', 'auto') -%}
-
-{#- Regex that strips the resource-type prefix (and, when penny_dbt_project_name
-    is set, the sanitised project prefix) off a `node_id` job label so it reads
-    as a clean model name. dbt's default query-comment stamps node_id as
-    model_<project>_<name> (dots sanitised to underscores). -#}
-{%- set penny_project = var('penny_dbt_project_name', none) -%}
-{%- set node_types = 'model|snapshot|seed|test|unit_test|analysis|operation' -%}
-{%- if penny_project -%}
-    {%- set node_id_prefix = '^(' ~ node_types ~ ')_' ~ (penny_project | lower | replace('-', '_')) ~ '_' -%}
-{%- else -%}
-    {%- set node_id_prefix = '^(' ~ node_types ~ ')_' -%}
-{%- endif -%}
 
 with job_history as (
 
@@ -51,24 +44,9 @@ identified as (
 
     select
         *,
-        -- Model identity, in order of preference:
-        --   1. dbt_model_name label (cleanest, when configured)
-        --   2. node_id label with its resource/project prefix stripped
-        --      (covers projects using dbt's default job-label query comment)
-        --   3. destination table name
-        --   4. 'unknown' — dbt jobs that write nowhere (introspection, hooks,
-        --      package operations) so model_name is never null
-        -- The trailing __dbt_tmp incremental suffix is stripped so a model's
-        -- temp-build job folds into the model instead of becoming a phantom row.
-        regexp_replace(
-            coalesce(
-                dbt_model_name,
-                nullif(regexp_replace(dbt_node_id, r'{{ node_id_prefix }}', ''), ''),
-                destination_table,
-                'unknown'
-            ),
-            r'__dbt_tmp$', ''
-        ) as model_name,
+        -- Model identity and the __dbt_tmp fold live in penny_model_name, which
+        -- log_run_costs also uses so the console summary matches these tables.
+        {{ penny.penny_model_name('dbt_model_name', 'dbt_node_id', 'target_table') }} as model_name,
         dbt_model_name is null as is_label_fallback
     from job_history
 
@@ -85,6 +63,12 @@ enriched as (
         dbt_node_id,
         model_name,
         is_label_fallback,
+        statement_type,
+
+        -- Split a model's own build statement from its hooks, and from run
+        -- overhead that belongs to no model. Shared with log_run_costs so the
+        -- console summary and the tables agree. See penny_job_role for limits.
+        {{ penny.penny_job_role('statement_type', 'target_table', 'model_name') }} as job_role,
 
         -- Classify by name. RA staging/integration use stg_/int_ prefixes;
         -- warehouse tables follow the Kimball *_fact / *_dim suffix convention
@@ -124,6 +108,7 @@ enriched as (
         user_email,
         destination_dataset,
         destination_table,
+        target_table,
         error_message,
         error_message is not null as is_error
 
@@ -151,9 +136,12 @@ select
     cache_hit,
     cost_usd,
     pricing_model,
+    statement_type,
+    job_role,
     user_email,
     destination_dataset,
     destination_table,
+    target_table,
     error_message,
     is_error
 from enriched

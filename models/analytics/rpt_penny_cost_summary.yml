@@ -20,15 +20,27 @@ models:
         description: Rittman Analytics layer for the model.
         tests:
           - accepted_values:
-              values: ['staging', 'integration', 'warehouse', 'analytics', 'unclassified']
-      - name: total_runs
-        description: Number of executions of this model on this day.
+              arguments:
+                values: ['staging', 'integration', 'warehouse', 'analytics', 'unclassified']
+      - name: total_jobs
+        description: >
+          Number of BigQuery jobs for this model on this day. Higher than the
+          number of model runs, because each pre-hook and post-hook statement is
+          its own job carrying the same model label.
+      - name: build_jobs
+        description: Jobs that wrote the model's own relation (job_role = 'build').
+      - name: hook_jobs
+        description: Hook, grant and other non-build jobs run in the model's context.
       - name: total_cost_usd
-        description: Total estimated cost in USD for the day.
-      - name: avg_cost_per_run_usd
-        description: Average cost per execution for the day.
-      - name: max_cost_per_run_usd
-        description: Most expensive single execution for the day.
+        description: Total estimated cost in USD for the day, builds and hooks together.
+      - name: build_cost_usd
+        description: Share of total_cost_usd from build jobs.
+      - name: hook_cost_usd
+        description: Share of total_cost_usd from hook jobs.
+      - name: avg_cost_per_job_usd
+        description: Average cost per BigQuery job for the day.
+      - name: max_cost_per_job_usd
+        description: Most expensive single job for the day.
       - name: total_gb_billed
         description: Total GiB billed across the day's executions.
       - name: avg_execution_seconds
@@ -46,10 +58,12 @@ models:
         tests:
           - not_null
           - accepted_values:
-              values: [true, false]
-              quote: false
+              arguments:
+                values: [true, false]
+                quote: false
     tests:
       - dbt_utils.unique_combination_of_columns:
-          combination_of_columns:
-            - run_date
-            - model_name
+          arguments:
+            combination_of_columns:
+              - run_date
+              - model_name

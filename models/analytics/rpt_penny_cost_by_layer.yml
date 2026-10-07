@@ -15,11 +15,20 @@ models:
         tests:
           - not_null
           - accepted_values:
-              values: ['staging', 'integration', 'warehouse', 'analytics', 'unclassified']
+              arguments:
+                values: ['staging', 'integration', 'warehouse', 'analytics', 'unclassified']
       - name: models_run
         description: Distinct models that ran in this layer on this day.
-      - name: total_executions
-        description: Total executions across all models in this layer for the day.
+      - name: build_jobs
+        description: Jobs that wrote a model's own relation, across the layer.
+      - name: hook_jobs
+        description: Hook and grant jobs, across the layer.
+      - name: build_cost_usd
+        description: Share of total_cost_usd from build jobs.
+      - name: hook_cost_usd
+        description: Share of total_cost_usd from hook jobs.
+      - name: total_jobs
+        description: Total BigQuery jobs across all models in this layer for the day.
       - name: total_cost_usd
         description: Total estimated cost in USD for the layer on this day.
       - name: total_gb_billed
@@ -28,6 +37,7 @@ models:
         description: Average per-model average execution time for the layer.
     tests:
       - dbt_utils.unique_combination_of_columns:
-          combination_of_columns:
-            - run_date
-            - methodology_layer
+          arguments:
+            combination_of_columns:
+              - run_date
+              - methodology_layer

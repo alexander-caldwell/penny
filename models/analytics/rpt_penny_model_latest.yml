@@ -17,7 +17,8 @@ models:
         description: Rittman Analytics layer for the model.
         tests:
           - accepted_values:
-              values: ['staging', 'integration', 'warehouse', 'analytics', 'unclassified']
+              arguments:
+                values: ['staging', 'integration', 'warehouse', 'analytics', 'unclassified']
       - name: last_run_date
         description: Most recent date the model ran.
         tests:
@@ -37,8 +38,9 @@ models:
         tests:
           - not_null
           - accepted_values:
-              values: ['green', 'amber', 'red']
+              arguments:
+                values: ['green', 'amber', 'red']
       - name: total_cost_30d
         description: Total cost over the last 30 days.
-      - name: total_runs_30d
-        description: Total executions over the last 30 days.
+      - name: total_jobs_30d
+        description: Total BigQuery jobs over the last 30 days, builds and hooks together.

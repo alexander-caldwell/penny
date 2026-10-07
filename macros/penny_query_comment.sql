@@ -10,7 +10,14 @@
     With `job-label: true`, dbt-bigquery parses this JSON comment and turns each
     key/value into a BigQuery job label (sanitised to lowercase, with disallowed
     characters replaced by underscores and truncated to 63 chars). dbt always
-    adds `dbt_invocation_id` on top, so Penny gets all three labels it reads.
+    adds `dbt_invocation_id` on top, so Penny gets all four labels it reads.
+
+    `dbt_project_name` is the *root* dbt project — the project that ran dbt, not
+    the package a model is defined in. It backs penny_dbt_project_filter, which
+    would otherwise have to parse the project back out of the sanitised node id
+    (see penny_project_filter for why that is unreliable). `project_name` is
+    probed with `is defined` and falls back to the node's package name, because
+    the query-comment context is one of the places engines differ.
 
     Why this and not `models: +labels:` in dbt_project.yml? That file is rendered
     with no model context, so `{{ this.name }}` / `{{ node.name }}` are undefined
@@ -24,7 +31,8 @@
     {%- if node is not none -%}
         {%- do comment.update({
             'dbt_model_name': node.name,
-            'dbt_node_id': node.unique_id
+            'dbt_node_id': node.unique_id,
+            'dbt_project_name': project_name if project_name is defined else node.package_name
         }) -%}
     {%- endif -%}
     {{ return(tojson(comment)) }}

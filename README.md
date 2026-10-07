@@ -18,7 +18,7 @@ to configure for the common case.
 # 1. packages.yml
 packages:
   - git: "https://github.com/alexander-caldwell/penny.git"
-    revision: v0.1.5
+    revision: v0.1.6
 ```
 
 ```yaml
@@ -98,6 +98,18 @@ Install via `packages.yml` and `dbt deps` (step 1). Penny depends on `dbt_utils`
 for its freshness and uniqueness tests — if your project already includes it, dbt
 deduplicates automatically.
 
+**Version requirements.** dbt 1.10.5 or later, and BigQuery. The floor is 1.10.5
+because Penny's generic tests nest their arguments under the `arguments:`
+property, which was added in that version. The upper bound is `<3.0.0`, so the
+Fusion engine (which reports as v2) does not flag Penny as incompatible.
+
+Fusion is **not yet tested** against Penny. The mechanism Penny depends on is
+BigQuery job labels from `query-comment: job-label: true`, and BigQuery support
+in Fusion is still Preview. The run-summary hook reads dbt's `results` object,
+which has known parity gaps in Fusion; Penny probes every field before use and
+falls back to counting model names from job labels if the object is unusable, so
+the worst case is a less precise model count, not a failed run.
+
 ### Labelling jobs so cost maps to models
 
 By default dbt stamps BigQuery jobs only with `dbt_invocation_id`, so Penny can
@@ -123,6 +135,11 @@ query-comment:
   comment: "{{ penny.penny_query_comment(node) }}"
   job-label: true
 ```
+
+It stamps three labels: `dbt_model_name`, `dbt_node_id` and `dbt_project_name`
+(the project that ran dbt). dbt adds `dbt_invocation_id` itself. The project
+label is what makes `penny_dbt_project_filter` exact — without it Penny has to
+infer the project from the node id, which is less reliable.
 
 **Selective — a model `config()` block.** To label only some models (handy for a
 first test), set labels in the model itself, where `this` is in scope:
@@ -194,14 +211,23 @@ With the [console hook](#optional-the-run-summary-console-hook) registered, any
 
 ```text
 ═══════════════════════════════════════════
-  🪙 Penny — Run Summary
+  🪙  Penny — Run Summary
 ═══════════════════════════════════════════
   Models run:        47
+  Queries executed:  61 (47 build, 12 hook, 2 overhead)
   Total TB billed:   0.032 TB
   Estimated cost:    $0.20 USD
+    builds:          $0.18
+    hooks:           $0.02
+    overhead:        $0.0
   Largest model:     1.8 GB (fct_orders)
 ═══════════════════════════════════════════
 ```
+
+"Models run" comes from dbt itself, so it is exactly the number of models dbt
+executed. "Queries executed" comes from BigQuery and is usually higher, because
+each pre-hook and post-hook statement is its own BigQuery job. See
+[models versus jobs](#models-versus-jobs).
 
 The first build reads `penny_lookback_days` of history (default 180). After
 that, runs are incremental and only pick up new partitions, so they stay cheap.
@@ -283,7 +309,7 @@ order by total_cost_usd desc
 select
     methodology_layer,
     round(sum(total_cost_usd), 2) as cost_usd,
-    sum(total_executions) as executions
+    sum(total_jobs) as bigquery_jobs
 from `penny.rpt_penny_cost_by_layer`
 where run_date >= date_sub(current_date(), interval 7 day)
 group by methodology_layer
@@ -292,8 +318,9 @@ order by cost_usd desc
 
 ### "Why was that day so expensive — which run did it?"
 
-`int_penny_model_runs` — one row per execution, fully costed. Drop down here when
-a daily figure looks wrong and you need the individual jobs behind it.
+`int_penny_model_runs` — one row per BigQuery job, fully costed. Drop down here
+when a daily figure looks wrong and you need the individual jobs behind it. Add
+`where job_role = 'build'` to exclude hook statements.
 
 ```sql
 -- The 20 most expensive individual runs in the last week
@@ -311,6 +338,48 @@ order by cost_usd desc
 limit 20
 ```
 
+### Models versus jobs
+
+One dbt model can create many BigQuery jobs. dbt renders the query comment (and
+therefore the job labels) once per node, so **every pre-hook and post-hook
+statement carries the same `dbt_model_name` label as the model's build
+statement**. Counting jobs to count models overstates the total: a single model
+with twelve hook statements looks like thirteen models.
+
+Penny keeps the two apart with a `job_role` column on `int_penny_model_runs`:
+
+| `job_role` | What it is |
+|--------|---------|
+| `build` | The statement that wrote the model's own relation, including an incremental model's `__dbt_tmp` temp build |
+| `hook` | Attributable to a model but not its build: pre-hooks, post-hooks, grants |
+| `overhead` | Attributable to no model: introspective queries, package operations, `on-run-start` / `on-run-end` statements |
+
+A job is classified as `build` when its `statement_type` writes data or DDL
+*and* the table it wrote matches the model name. So:
+
+```sql
+-- Models run yesterday, and what each one's build cost versus its hooks
+select
+    model_name,
+    round(sum(if(job_role = 'build', cost_usd, 0)), 4) as build_cost_usd,
+    round(sum(if(job_role = 'hook',  cost_usd, 0)), 4) as hook_cost_usd
+from `penny.int_penny_model_runs`
+where run_date = date_sub(current_date(), interval 1 day)
+  and job_role != 'overhead'
+group by model_name
+order by build_cost_usd + hook_cost_usd desc
+```
+
+Two limits worth knowing:
+
+- A post-hook that writes to a **different** table (an audit log, say) is
+  classified `hook` only while `dbt_model_name` or `dbt_node_id` labels are
+  present. With no labels at all, the model name falls back to the target table,
+  so such a hook looks like a build of its own model. Label your jobs.
+- A post-hook that writes to the model's **own** table (a manual backfill
+  statement) is classified `build`. It did write the model relation, so this is
+  arguably right, but it will not show up as hook cost.
+
 ### Column reference
 
 <details>
@@ -326,7 +395,7 @@ limit 20
 | `trend_pct_7d` | Week-over-week % change (last 7d vs prior 7d); null if no prior week |
 | `anomaly_status` | `green` / `amber` / `red` |
 | `total_cost_30d` | Total cost over the last 30 days |
-| `total_runs_30d` | Total executions over the last 30 days |
+| `total_jobs_30d` | Total BigQuery jobs over the last 30 days (builds and hooks) |
 
 </details>
 
@@ -336,9 +405,11 @@ limit 20
 | Column | Meaning |
 |--------|---------|
 | `run_date`, `model_name`, `methodology_layer` | Grain + classification |
-| `total_runs` | Executions that day |
+| `total_jobs` | BigQuery jobs that day (builds **and** hooks — see note below) |
+| `build_jobs` / `hook_jobs` | Job count split by role |
 | `total_cost_usd` | Total cost that day |
-| `avg_cost_per_run_usd` / `max_cost_per_run_usd` | Per-execution cost |
+| `build_cost_usd` / `hook_cost_usd` | Cost split by role |
+| `avg_cost_per_job_usd` / `max_cost_per_job_usd` | Per-job cost |
 | `total_gb_billed` | GiB billed that day |
 | `avg_execution_seconds` | Average wall-clock time |
 | `cache_hits` | Cache-served executions |
@@ -354,20 +425,24 @@ limit 20
 |--------|---------|
 | `run_date`, `methodology_layer` | Grain |
 | `models_run` | Distinct models in the layer that day |
-| `total_executions` | Executions across the layer |
+| `total_jobs` | BigQuery jobs across the layer |
+| `build_jobs` / `hook_jobs` | Job count split by role |
 | `total_cost_usd` / `total_gb_billed` | Layer totals |
+| `build_cost_usd` / `hook_cost_usd` | Cost split by role |
 | `avg_execution_seconds` | Average per-model execution time |
 
 </details>
 
 <details>
-<summary><code>int_penny_model_runs</code> (one row per execution)</summary>
+<summary><code>int_penny_model_runs</code> (one row per BigQuery job)</summary>
 
 | Column | Meaning |
 |--------|---------|
 | `job_id` | BigQuery job id (grain) |
 | `created_at` / `run_date` | Job timestamp / date |
 | `model_name` / `dbt_node_id` | Model identity |
+| `job_role` | `build` / `hook` / `overhead` — see note below |
+| `statement_type` / `target_table` | BigQuery statement and the table it wrote |
 | `is_label_fallback` | True when `model_name` came from the destination table (no label) |
 | `methodology_layer` | Layer classification |
 | `cost_usd` | Estimated cost for this run |
@@ -459,7 +534,7 @@ All variables go under `vars:` in the consumer project's `dbt_project.yml`.
 | `penny_price_per_slot_hour` | `0.04` | USD per slot-hour (reserved/editions jobs) |
 | `penny_lookback_days` | `180` | First-build / full-refresh window |
 | `penny_dbt_only` | `true` | Ingest dbt-labelled jobs only |
-| `penny_dbt_project_filter` | `null` | Restrict to one dbt project name |
+| `penny_dbt_project_filter` | `null` | Restrict to one dbt project: the root project that ran dbt, not the package a model comes from |
 | `penny_dbt_project_name` | `null` | Your dbt project name; strips the `model_<project>_` prefix off the fallback `node_id` label for clean names |
 | `penny_anomaly_threshold` | `3` | Flag daily cost > N× rolling 30-day average |
 
@@ -476,6 +551,15 @@ destination table name; rows where it did so are flagged with
 own `dbt_project.yml` for standalone development only. Consumer projects must add
 `"{{ penny.log_run_costs() }}"` to their own `on-run-end` — the `penny.` prefix
 is required.
+
+**`penny_dbt_project_filter` returns few or no rows.** Before v0.1.6 the filter
+matched nothing at all, because it parsed the node id in a form BigQuery never
+stores. It now matches the `dbt_project_name` job label, which only exists on
+jobs run since you upgraded, and falls back to the node-id prefix for older
+jobs. The staging model is incremental and does not reprocess history, so run
+`dbt run --select penny --full-refresh` to re-read and re-filter the last
+`penny_lookback_days` of jobs. The filter names the project that ran dbt, so
+Penny's own models are included, not excluded.
 
 **`Access Denied` reading INFORMATION_SCHEMA.JOBS.** The service account lacks
 `bigquery.jobs.list`. Grant `BigQuery User` on the project.

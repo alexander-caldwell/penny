@@ -2,13 +2,17 @@ name: 'penny'
 version: '1.0.0'
 config-version: 2
 
-require-dbt-version: [">=1.0.0", "<2.0.0"]
+# Lower bound is 1.10.5, the first version with the `arguments:` property that
+# this project's generic tests use. Upper bound is <3.0.0, not <2.0.0, so the
+# Fusion engine (which reports as v2) does not flag Penny as an incompatible
+# package; dbt Labs ask package authors to include 2.0.0 in this range to
+# declare Fusion compatibility. Fusion itself is untested against Penny.
+require-dbt-version: [">=1.10.5", "<3.0.0"]
 
 # ── Paths ──────────────────────────────────────────────────────────────────
 model-paths: ["models"]
 macro-paths: ["macros"]
 seed-paths: ["seeds"]
-target-path: "target"
 clean-targets: ["target", "dbt_packages"]
 
 # ── Configuration variables ──────────────────────────────────────────────────
@@ -43,8 +47,11 @@ vars:
   # Restrict ingestion to dbt-labelled jobs only (recommended).
   penny_dbt_only: true
 
-  # Optional: restrict to a single dbt project name (matched against the
-  # project segment of dbt_node_id, e.g. model.<project>.<name>). null = no filter.
+  # Optional: restrict to a single dbt project — the root project that ran dbt,
+  # not the package a model is defined in, so Penny's own models count as part
+  # of your project. Matched against the dbt_project_name job label, falling
+  # back to the node-id prefix for jobs that predate that label (see
+  # penny_project_filter). null = no filter.
   penny_dbt_project_filter: null
 
   # Optional: your dbt project name. Only used when Penny falls back to the
@@ -89,3 +96,12 @@ seeds:
 #
 #   on-run-end:
 #     - "{{ penny.log_run_costs() }}"
+
+# ── Flags ─────────────────────────────────────────────────────────────────────
+# Generic test arguments in this project's .yml files are nested under
+# `arguments:`, which dbt 1.10.5+ and Fusion expect. This flag only takes effect
+# when Penny is the root project (i.e. when developing Penny itself) — dbt reads
+# flags from the root project only, so it is inert for consumers. Consumers on
+# dbt 1.10.x may want to set the same flag in their own dbt_project.yml.
+flags:
+  require_generic_test_arguments_property: true

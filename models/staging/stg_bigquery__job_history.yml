@@ -11,11 +11,12 @@ models:
     tests:
       # Source-freshness style check: warn if no jobs have landed in the last day.
       - dbt_utils.recency:
-          datepart: day
-          field: created_at
-          interval: 1
           config:
             severity: warn
+          arguments:
+            datepart: day
+            field: created_at
+            interval: 1
     columns:
       - name: job_id
         description: BigQuery job id. Unique per job within the project/region.
@@ -42,6 +43,15 @@ models:
           pricing in 'auto' mode (null → on-demand bytes, set → slot-based).
       - name: cache_hit
         description: True when the query result was served from cache (zero bytes billed).
+      - name: statement_type
+        description: >
+          BigQuery statement type (CREATE_TABLE_AS_SELECT, MERGE, SELECT, and so
+          on). Used by penny.penny_job_role to tell a model's build statement
+          from its hook statements.
+      - name: target_table
+        description: >
+          Table this job wrote: destination_table for CTAS and DML, or the DDL
+          target for CREATE VIEW and similar. Null for jobs that write nowhere.
       - name: destination_project
         description: Project id of the job's destination table, if any.
       - name: destination_dataset
@@ -72,3 +82,13 @@ models:
           dbt node unique id from job labels. Prefers Penny's dbt_node_id label,
           falling back to the standard node_id label that dbt's default
           query-comment emits under job-label: true. Null when neither is present.
+          BigQuery replaces the dots with underscores, so the stored value looks
+          like model_<project>_<name>, not model.<project>.<name>.
+      - name: dbt_project_name
+        description: >
+          Root dbt project name from job labels: the project that ran dbt, not
+          the package a model is defined in. Emitted by penny_query_comment from
+          v0.1.6 on, so it is null for jobs labelled before that and for
+          consumers using dbt's own default query comment. Backs the
+          penny_dbt_project_filter var, which falls back to the node id prefix
+          when this is null.
