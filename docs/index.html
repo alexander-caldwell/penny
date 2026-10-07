@@ -1,0 +1,267 @@
+---
+layout: default
+title: Penny
+description: Model-level BigQuery cost tracking for dbt
+---
+
+<header class="hero">
+  <div class="wrap">
+    <span class="coin">🪙</span>
+    <h1>Know what every dbt model <em>actually costs</em>.</h1>
+    <p class="lede">
+      Penny reads BigQuery's own record of every query it ran, traces each one
+      back to the dbt model that caused it, and turns bytes into dollars. Per
+      model, per day, with trends and anomaly flags.
+    </p>
+    <div class="actions">
+      <a class="btn btn-primary" href="#install">Install</a>
+      <a class="btn" href="{{ '/how-penny-works.html' | relative_url }}">How it works</a>
+      <a class="btn" href="https://github.com/alexander-caldwell/penny">GitHub</a>
+    </div>
+    <ul class="meta">
+      <li>BigQuery only</li>
+      <li>dbt 1.10.5+</li>
+      <li>No agent, no overhead</li>
+      <li>MIT</li>
+    </ul>
+  </div>
+</header>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">After every run</span>
+      <h2>A cost summary where you are already looking</h2>
+      <p>
+        Penny prints what the run cost to your console, split into the models
+        themselves and the hooks around them.
+      </p>
+    </div>
+
+    <div class="term-shell">
+      <div class="term-bar">
+        <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+        <span class="label">dbt build --select penny</span>
+      </div>
+<pre class="term"><span class="prompt">$</span> dbt build --select penny
+
+<span class="rule">═══════════════════════════════════════════</span>
+  🪙  Penny — Run Summary
+<span class="rule">═══════════════════════════════════════════</span>
+  <span class="key">Models run:</span>        <span class="num">5</span>
+  <span class="key">Seeds loaded:</span>      <span class="num">1</span>
+  <span class="key">Tests run:</span>         <span class="num">35</span>
+  <span class="key">Queries executed:</span>  <span class="num">40</span> (5 build, 35 hook, 0 overhead)
+  <span class="key">Total TB billed:</span>   <span class="num">0.0004</span> TB
+  <span class="key">Estimated cost:</span>    <span class="money">$0.002283 USD</span>
+    <span class="key">builds:</span>          <span class="money">$0.000376</span>
+    <span class="key">hooks:</span>           <span class="money">$0.001907</span>
+    <span class="key">overhead:</span>        <span class="money">$0.0</span>
+  <span class="key">Largest model:</span>     0.02 GB (stg_bigquery__job_history)
+<span class="rule">═══════════════════════════════════════════</span></pre>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">Why bother</span>
+      <h2>Cost you can act on</h2>
+      <p>
+        A warehouse bill tells you what you spent. It does not tell you which
+        model to look at on Monday morning.
+      </p>
+    </div>
+
+    <div class="cards">
+      <div class="card">
+        <h3>Per model, not per run</h3>
+        <p>
+          Every job is traced to the model that caused it, including the hooks
+          that ran around it and the temporary tables an incremental build
+          creates.
+        </p>
+      </div>
+      <div class="card">
+        <h3>Trends and anomalies</h3>
+        <p>
+          Daily cost against a rolling 30-day average, a weekly trend per model,
+          and a red, amber or green flag when a model costs more than it should.
+        </p>
+      </div>
+      <div class="card">
+        <h3>Useful with no setup</h3>
+        <p>
+          Penny works with zero labels and gets sharper as you give it more
+          identity. Two lines of configuration is the whole installation.
+        </p>
+      </div>
+      <div class="card">
+        <h3>Mixed billing handled</h3>
+        <p>
+          On-demand and reserved jobs are priced separately, job by job, so a
+          project that mixes both is still costed correctly.
+        </p>
+      </div>
+      <div class="card">
+        <h3>History that outlives BigQuery's</h3>
+        <p>
+          BigQuery keeps job history for 180 days. Penny's tables do not expire,
+          so running it daily is how you keep cost history for longer.
+        </p>
+      </div>
+      <div class="card">
+        <h3>Nothing to run</h3>
+        <p>
+          No agent, no scheduler, no external service. It is a dbt package that
+          reads metadata already sitting in your warehouse.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="install">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">Install</span>
+      <h2>Three steps</h2>
+      <p>Configuration only. No change to the SQL you run or the data it produces.</p>
+    </div>
+
+    <div class="steps">
+      <div class="step">
+        <h3>Add the package</h3>
+        <p>In <code>packages.yml</code>:</p>
+{% raw %}<pre><code>packages:
+  - git: "https://github.com/alexander-caldwell/penny.git"
+    revision: v0.1.10</code></pre>{% endraw %}
+      </div>
+
+      <div class="step">
+        <h3>Label your jobs</h3>
+        <p>
+          In <code>dbt_project.yml</code>. The query comment stamps each BigQuery
+          job with the model that ran it; the hook prints the summary.
+        </p>
+{% raw %}<pre><code>query-comment:
+  comment: "{{ penny.penny_query_comment(node) }}"
+  job-label: true
+
+on-run-end:
+  - "{{ penny.log_run_costs() }}"</code></pre>{% endraw %}
+      </div>
+
+      <div class="step">
+        <h3>Build</h3>
+        <p>Penny writes its own models into a <code>penny</code> schema.</p>
+<pre><code>dbt deps
+dbt build --select penny</code></pre>
+      </div>
+    </div>
+
+    <p class="note">
+      Install v0.1.9 or later. Earlier tags from v0.1.6 read a column that
+      <code>INFORMATION_SCHEMA.JOBS</code> does not have in every region.
+    </p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">What you get</span>
+      <h2>Five tables, raw jobs up to a per-model view</h2>
+    </div>
+
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr><th>Table</th><th>One row per</th><th>Tells you</th></tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td><code>stg_bigquery__job_history</code></td>
+            <td>BigQuery job</td>
+            <td>The raw facts, straight from job metadata</td>
+          </tr>
+          <tr>
+            <td><code>int_penny_model_runs</code></td>
+            <td>BigQuery job</td>
+            <td>Cost per job, tagged build, hook or overhead</td>
+          </tr>
+          <tr>
+            <td><code>rpt_penny_cost_summary</code></td>
+            <td>Model per day</td>
+            <td>Daily cost, 30-day rolling average, anomaly flag</td>
+          </tr>
+          <tr>
+            <td><code>rpt_penny_cost_by_layer</code></td>
+            <td>Layer per day</td>
+            <td>Where spend concentrates across your layers</td>
+          </tr>
+          <tr>
+            <td><code>rpt_penny_model_latest</code></td>
+            <td>Model</td>
+            <td>Latest state, weekly trend, red/amber/green status</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">Pricing</span>
+      <h2>How a job becomes a number</h2>
+      <p>Two formulas, chosen per job by whether it ran inside a reservation.</p>
+    </div>
+
+    <div class="formulas">
+      <div class="formula">
+        <h3>On-demand</h3>
+        <p>The job ran outside a reservation, so you paid for bytes.</p>
+        <code class="expr">bytes_billed ÷ 1 TiB × price per TiB</code>
+      </div>
+      <div class="formula">
+        <h3>Slot-based</h3>
+        <p>The job ran inside one, so you paid for time.</p>
+        <code class="expr">slot_ms ÷ 1 hour × price per slot-hour</code>
+      </div>
+    </div>
+
+    <p class="note">
+      Prices come from your configuration, not from the warehouse, so set them to
+      your contracted rate. Penny reports gross cost: BigQuery's free tier is
+      account-level and cannot be split across models.
+    </p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-head">
+      <span class="eyebrow">Read next</span>
+      <h2>Go deeper</h2>
+    </div>
+    <div class="cards">
+      <div class="card">
+        <h3><a href="{{ '/how-penny-works.html' | relative_url }}">How Penny works</a></h3>
+        <p>
+          What it reads, how a job is traced back to a model, why one model
+          produces many jobs, and how cost is worked out.
+        </p>
+      </div>
+      <div class="card">
+        <h3><a href="https://github.com/alexander-caldwell/penny#readme">README</a></h3>
+        <p>
+          Every configuration variable, the full column reference for each table,
+          and troubleshooting.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>

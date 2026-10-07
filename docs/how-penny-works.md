@@ -1,7 +1,14 @@
 ---
+layout: default
 title: How Penny works
 description: What Penny reads, how a job is traced to a model, and how cost is worked out
 ---
+
+<div class="wrap prose" markdown="1">
+
+[← Back](./){: .back}
+
+# How Penny works
 
 Penny is a dbt package that tells you what each of your dbt models costs to run
 on BigQuery — per model, per day, with trends and anomalies — and prints a cost
@@ -111,3 +118,5 @@ the single most expensive model — scoped to just that run.
 - **BigQuery keeps job history for 180 days.** Penny's tables persist beyond
   that, so running it regularly (daily) is how you keep cost history longer than
   the source window — and how the trend and anomaly signals stay meaningful.
+
+</div>

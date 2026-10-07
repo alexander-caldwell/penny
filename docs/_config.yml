@@ -1,10 +1,5 @@
-# GitHub Pages configuration. The site is published from the /docs folder on
-# main, so every .md file here with front matter becomes a page.
+# GitHub Pages configuration. Published from the /docs folder on main.
+# No gem theme: the layout in _layouts/default.html and the stylesheet in
+# assets/css/penny.css are the whole design.
 title: Penny
 description: Model-level BigQuery cost tracking for dbt
-theme: jekyll-theme-cayman
-show_downloads: false
-
-# Nothing outside /docs is part of the site.
-exclude:
-  - "*.sql"

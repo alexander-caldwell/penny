@@ -1,0 +1,400 @@
+/* Penny documentation site.
+   Warm copper on a light page, with a dark variant that follows the reader's
+   system setting. No framework: one stylesheet, one font request. */
+
+:root {
+  --bg: #fdfbf9;
+  --surface: #ffffff;
+  --surface-2: #f8f2ec;
+  --ink: #1b1715;
+  --ink-2: #463d37;
+  --muted: #796d64;
+  --line: #ebe0d5;
+  --line-2: #ddcfc1;
+  --copper: #a3521d;
+  --copper-hover: #8a4315;
+  --copper-soft: #c47a44;
+  --wash: #fdf2e8;
+  --term-bg: #211c19;
+  --term-ink: #ece3d9;
+  --term-dim: #9d8f83;
+  --term-green: #8fbf96;
+  --term-amber: #e0b25f;
+  --shadow: 0 1px 2px rgba(27, 23, 21, .05), 0 8px 24px -12px rgba(27, 23, 21, .18);
+  --radius: 12px;
+  --maxw: 64rem;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #15110f;
+    --surface: #1d1817;
+    --surface-2: #231d1a;
+    --ink: #f3ece5;
+    --ink-2: #d6cabf;
+    --muted: #a2948a;
+    --line: #322a25;
+    --line-2: #43382f;
+    --copper: #e09a63;
+    --copper-hover: #eeae7b;
+    --copper-soft: #c98a54;
+    --wash: #251c15;
+    --shadow: 0 1px 2px rgba(0, 0, 0, .4), 0 8px 24px -12px rgba(0, 0, 0, .6);
+  }
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto,
+               "Helvetica Neue", Arial, sans-serif;
+  font-size: 17px;
+  line-height: 1.65;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, .wordmark {
+  font-family: Fraunces, Georgia, "Times New Roman", serif;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: -.01em;
+  color: var(--ink);
+}
+
+a { color: var(--copper); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+a:hover { color: var(--copper-hover); }
+
+code, pre, .term {
+  font-family: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas,
+               "Liberation Mono", monospace;
+}
+
+code {
+  font-size: .88em;
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 5px;
+  padding: .1em .35em;
+}
+
+pre {
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 1rem 1.1rem;
+  overflow-x: auto;
+  font-size: .86rem;
+  line-height: 1.6;
+}
+
+pre code { background: none; border: 0; padding: 0; font-size: inherit; }
+
+.wrap { max-width: var(--maxw); margin: 0 auto; padding: 0 16px; }
+
+/* ── Navigation ─────────────────────────────────────────────────────────── */
+
+.nav {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  background: color-mix(in srgb, var(--bg) 88%, transparent);
+  backdrop-filter: saturate(140%) blur(10px);
+  border-bottom: 1px solid var(--line);
+}
+
+.nav .wrap {
+  display: flex;
+  align-items: center;
+  gap: 1.25rem;
+  min-height: 56px;
+}
+
+.nav .wordmark {
+  font-size: 1.1rem;
+  text-decoration: none;
+  color: var(--ink);
+  margin-right: auto;
+}
+
+.nav .wordmark span { color: var(--copper); }
+
+.nav a:not(.wordmark) {
+  color: var(--ink-2);
+  text-decoration: none;
+  font-size: .94rem;
+}
+
+.nav a:not(.wordmark):hover { color: var(--copper); }
+
+/* ── Hero ───────────────────────────────────────────────────────────────── */
+
+.hero {
+  position: relative;
+  overflow: hidden;
+  border-bottom: 1px solid var(--line);
+  background:
+    radial-gradient(60rem 26rem at 18% -18%, var(--wash), transparent 60%),
+    var(--bg);
+}
+
+.hero .wrap { padding-top: 4.5rem; padding-bottom: 3.5rem; }
+
+.coin {
+  font-size: 2.4rem;
+  line-height: 1;
+  display: block;
+  margin-bottom: 1rem;
+}
+
+.hero h1 {
+  font-size: clamp(2.3rem, 6vw, 3.6rem);
+  margin: 0 0 .75rem;
+  max-width: 20ch;
+}
+
+.hero h1 em { font-style: normal; color: var(--copper); }
+
+.lede {
+  font-size: clamp(1.05rem, 2.2vw, 1.22rem);
+  color: var(--ink-2);
+  max-width: 54ch;
+  margin: 0 0 1.75rem;
+}
+
+.actions { display: flex; flex-wrap: wrap; gap: .65rem; margin-bottom: 1.5rem; }
+
+.btn {
+  display: inline-block;
+  padding: .6rem 1.1rem;
+  border-radius: 9px;
+  font-size: .95rem;
+  font-weight: 500;
+  text-decoration: none;
+  border: 1px solid var(--line-2);
+  color: var(--ink);
+  background: var(--surface);
+  transition: background .15s ease, border-color .15s ease, color .15s ease;
+}
+
+.btn:hover { border-color: var(--copper-soft); color: var(--copper); }
+
+.btn-primary {
+  background: var(--copper);
+  border-color: var(--copper);
+  color: #fff;
+}
+
+.btn-primary:hover { background: var(--copper-hover); border-color: var(--copper-hover); color: #fff; }
+
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .5rem .9rem;
+  font-size: .85rem;
+  color: var(--muted);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.meta li + li::before { content: "·"; margin-right: .9rem; color: var(--line-2); }
+
+/* ── Terminal ───────────────────────────────────────────────────────────── */
+
+.term-shell {
+  background: var(--term-bg);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+  margin: 0;
+}
+
+.term-bar {
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+  padding: .6rem .85rem;
+  background: rgba(255, 255, 255, .05);
+  border-bottom: 1px solid rgba(255, 255, 255, .07);
+}
+
+.dot { width: 10px; height: 10px; border-radius: 50%; display: inline-block; }
+.dot.r { background: #d9705f; }
+.dot.y { background: #ddb15c; }
+.dot.g { background: #83ab74; }
+
+.term-bar .label {
+  margin-left: .5rem;
+  font-size: .76rem;
+  color: var(--term-dim);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+.term {
+  margin: 0;
+  padding: 1.1rem 1.2rem 1.3rem;
+  background: none;
+  border: 0;
+  border-radius: 0;
+  color: var(--term-ink);
+  font-size: .8rem;
+  line-height: 1.75;
+  overflow-x: auto;
+  white-space: pre;
+}
+
+.term .prompt { color: var(--term-dim); }
+.term .rule   { color: var(--copper-soft); }
+.term .key    { color: var(--term-dim); }
+.term .num    { color: var(--term-green); }
+.term .money  { color: var(--term-amber); }
+
+/* ── Sections ───────────────────────────────────────────────────────────── */
+
+section { padding: 3.75rem 0; border-bottom: 1px solid var(--line); }
+section:last-of-type { border-bottom: 0; }
+
+.section-head { max-width: 58ch; margin-bottom: 2rem; }
+.section-head h2 { font-size: clamp(1.5rem, 3.6vw, 2rem); margin: 0 0 .5rem; }
+.section-head p { color: var(--ink-2); margin: 0; }
+
+.eyebrow {
+  display: block;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: .72rem;
+  letter-spacing: .13em;
+  text-transform: uppercase;
+  color: var(--copper);
+  margin-bottom: .6rem;
+}
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 1rem;
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 1.4rem;
+}
+
+.card h3 { font-size: 1.1rem; margin: 0 0 .5rem; }
+.card p { margin: 0; color: var(--ink-2); font-size: .95rem; }
+
+.steps { counter-reset: step; display: grid; gap: 1.5rem; }
+
+.step { position: relative; padding-left: 2.6rem; }
+
+.step::before {
+  counter-increment: step;
+  content: counter(step);
+  position: absolute;
+  left: 0;
+  top: .1rem;
+  width: 1.8rem;
+  height: 1.8rem;
+  border-radius: 50%;
+  background: var(--wash);
+  border: 1px solid var(--line-2);
+  color: var(--copper);
+  font-size: .85rem;
+  font-weight: 600;
+  display: grid;
+  place-items: center;
+}
+
+.step h3 { font-size: 1.02rem; margin: .1rem 0 .55rem; }
+.step p  { margin: 0 0 .7rem; color: var(--ink-2); font-size: .95rem; }
+.step pre { margin: 0; }
+
+/* ── Tables ─────────────────────────────────────────────────────────────── */
+
+.table-wrap { overflow-x: auto; border: 1px solid var(--line); border-radius: var(--radius); }
+
+table { border-collapse: collapse; width: 100%; font-size: .92rem; min-width: 34rem; }
+
+th, td { text-align: left; padding: .7rem .9rem; border-bottom: 1px solid var(--line); }
+
+thead th {
+  background: var(--surface-2);
+  font-size: .78rem;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+tbody tr:last-child td { border-bottom: 0; }
+td code { white-space: nowrap; }
+
+/* ── Formula pair ───────────────────────────────────────────────────────── */
+
+.formulas { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem; }
+
+.formula {
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-left: 3px solid var(--copper);
+  border-radius: var(--radius);
+  padding: 1.25rem 1.4rem;
+}
+
+.formula h3 { font-size: 1rem; margin: 0 0 .4rem; }
+.formula p { margin: 0 0 .7rem; color: var(--ink-2); font-size: .93rem; }
+.formula .expr { font-size: .82rem; color: var(--ink); background: var(--surface-2);
+                 border: 1px solid var(--line); border-radius: 7px; padding: .5rem .7rem;
+                 display: block; overflow-x: auto; }
+
+.note {
+  margin-top: 1.5rem;
+  padding: .9rem 1.1rem;
+  background: var(--wash);
+  border: 1px solid var(--line-2);
+  border-radius: var(--radius);
+  font-size: .92rem;
+  color: var(--ink-2);
+}
+
+/* ── Footer ─────────────────────────────────────────────────────────────── */
+
+footer {
+  padding: 2.5rem 0 3.5rem;
+  border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: .9rem;
+}
+
+footer .links { display: flex; flex-wrap: wrap; gap: 1.1rem; margin-bottom: .8rem; }
+footer a { text-decoration: none; }
+footer a:hover { text-decoration: underline; }
+
+/* ── Prose pages (how-penny-works) ──────────────────────────────────────── */
+
+.prose { padding: 3rem 0 4rem; }
+.prose h1 { font-size: clamp(2rem, 5vw, 2.7rem); margin: 0 0 1.25rem; }
+.prose h2 { font-size: 1.45rem; margin: 2.5rem 0 .75rem; }
+.prose h3 { font-size: 1.12rem; margin: 1.8rem 0 .5rem; }
+.prose p, .prose li { color: var(--ink-2); }
+.prose > p:first-of-type { font-size: 1.1rem; color: var(--ink); }
+.prose ul, .prose ol { padding-left: 1.3rem; }
+.prose li { margin-bottom: .35rem; }
+.prose table { margin: 1rem 0; }
+.prose hr { border: 0; border-top: 1px solid var(--line); margin: 2.5rem 0; }
+.prose blockquote { margin: 1.25rem 0; padding-left: 1rem; border-left: 3px solid var(--copper-soft); color: var(--muted); }
+.prose .back { display: inline-block; margin-bottom: 1.5rem; font-size: .9rem; text-decoration: none; }
+.prose .back:hover { text-decoration: underline; }
+
+@media (max-width: 640px) {
+  body { font-size: 16px; }
+  .hero .wrap { padding-top: 3rem; padding-bottom: 2.5rem; }
+  section { padding: 2.75rem 0; }
+  .nav a:not(.wordmark) { font-size: .88rem; }
+}
