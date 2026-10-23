@@ -53,6 +53,18 @@ failed on the first model with `Unrecognized name: ddl_target_table`. Any change
 touching the columns read from `JOBS` must also be dry-run against BigQuery,
 which costs nothing and resolves every name.
 
+### Columns that only some JOBS views have
+
+`INFORMATION_SCHEMA.JOBS` differs by region and by BigQuery edition. Reading a
+column that is absent fails the model, it does not degrade. Any column Penny
+cannot rely on everywhere goes in `penny_optional_column_specs`, behind a var
+that is **off** by default, and is emitted as a typed null when disabled so the
+output schema never changes. The `null_type` in a spec must match the type of
+`expr`, or the two branches produce different schemas; check both with a dry run.
+
+Do not add an unguarded column to the source CTE without a dry run first. That
+is how `ddl_target_table` shipped in v0.1.6.
+
 ## Architecture
 
 ### Data flow
@@ -84,6 +96,7 @@ console figure and the warehouse figure will silently disagree:
 | `penny_jobs_relation` | The `project`.`region-xxx` path, including the `region-` prefix rule |
 | `penny_node_types` | The dbt resource types that can prefix a sanitised node id |
 | `penny_project_filter` | The `penny_dbt_project_filter` match: label first, node-id prefix as fallback |
+| `penny_optional_columns` | The guarded `JOBS` columns and their on/off vars |
 
 These return SQL expression **strings**, and take column names as arguments. If
 you add logic to `int_penny_model_runs` that the hook also needs, extract it to a

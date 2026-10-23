@@ -92,3 +92,23 @@ models:
           consumers using dbt's own default query comment. Backs the
           penny_dbt_project_filter var, which falls back to the node id prefix
           when this is null.
+      - name: total_services_sku_slot_ms
+        description: >
+          Slot time billed through BigQuery services SKUs. Null unless
+          penny_enable_total_services_sku_slot_ms is set, and absent from the
+          JOBS view in some regions and editions, which is why it is opt-in.
+      - name: reservation_group_path
+        description: >
+          Reservation group the job ran in, flattened from an array to a '/'
+          separated string. Null unless penny_enable_reservation_group_path is
+          set.
+      - name: principal_subject
+        description: >
+          Full principal identity that ran the job, more precise than
+          user_email for service accounts. Null unless
+          penny_enable_principal_subject is set.
+      - name: edition
+        description: >
+          BigQuery edition the job ran under (STANDARD, ENTERPRISE,
+          ENTERPRISE_PLUS), where the view reports it. Null unless
+          penny_enable_edition is set.

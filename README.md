@@ -550,7 +550,24 @@ All variables go under `vars:` in the consumer project's `dbt_project.yml`.
 | `penny_dbt_only` | `true` | Ingest dbt-labelled jobs only |
 | `penny_dbt_project_filter` | `null` | Restrict to one dbt project: the root project that ran dbt, not the package a model comes from |
 | `penny_dbt_project_name` | `null` | Your dbt project name; strips the `model_<project>_` prefix off the fallback `node_id` label for clean names |
+| `penny_enable_total_services_sku_slot_ms` | `false` | Read the services-SKU slot time column (see below) |
+| `penny_enable_reservation_group_path` | `false` | Read the reservation group column (see below) |
+| `penny_enable_principal_subject` | `false` | Read the full principal identity column (see below) |
+| `penny_enable_edition` | `false` | Read the BigQuery edition column (see below) |
 | `penny_anomaly_threshold` | `3` | Flag daily cost > N× rolling 30-day average |
+
+**About the four `penny_enable_*` variables.** `INFORMATION_SCHEMA.JOBS` is not
+the same view everywhere: columns differ by region and by BigQuery edition, and
+referencing one your view does not have fails the model outright rather than
+degrading. These four are therefore off by default. Check your own view before
+enabling one:
+
+```sql
+select edition from `your-project`.`region-eu`.INFORMATION_SCHEMA.JOBS limit 1
+```
+
+A disabled column is still published, as a typed null, so switching one on or
+off never changes the output schema.
 
 ---
 
