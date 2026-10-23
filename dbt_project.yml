@@ -62,6 +62,22 @@ vars:
   # by node id — the names are just prefixed. null = no stripping.
   penny_dbt_project_name: null
 
+  # Optional INFORMATION_SCHEMA.JOBS columns, off by default.
+  #
+  # The JOBS view is not one fixed shape: columns differ by region and by
+  # BigQuery edition, and referencing one your view lacks fails the model
+  # outright rather than degrading. So each of these is opt-in. Switch one on
+  # only after checking your own view has it, e.g.
+  #
+  #   select edition from `your-project`.`region-eu`.INFORMATION_SCHEMA.JOBS limit 1
+  #
+  # A disabled column is still published, as a typed null, so turning one on or
+  # off never changes the output schema.
+  penny_enable_total_services_sku_slot_ms: false   # slot time billed via services SKUs (editions)
+  penny_enable_reservation_group_path: false       # reservation group, flattened to a path string
+  penny_enable_principal_subject: false            # full principal identity, beyond user_email
+  penny_enable_edition: false                      # STANDARD / ENTERPRISE / ENTERPRISE_PLUS
+
   # Anomaly threshold multiplier — a model's daily cost is flagged when it
   # exceeds this multiple of its trailing 30-day average.
   penny_anomaly_threshold: 3

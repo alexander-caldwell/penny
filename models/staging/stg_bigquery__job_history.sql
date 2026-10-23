@@ -47,7 +47,8 @@ with jobs as (
         reservation_id,
         error_result,
         destination_table,
-        labels
+        labels,
+{{ penny.penny_optional_columns() }}
     from {{ penny.penny_jobs_relation() }}
     where state = 'DONE'
       and job_type = 'QUERY'
@@ -99,7 +100,8 @@ labelled as (
         -- Root dbt project, emitted by penny_query_comment from v0.1.6 on.
         -- Null for jobs labelled before that, and for consumers using dbt's own
         -- default query comment; penny_project_filter falls back to the node id.
-        (select label.value from unnest(labels) as label where label.key = 'dbt_project_name') as dbt_project_name
+        (select label.value from unnest(labels) as label where label.key = 'dbt_project_name') as dbt_project_name,
+{{ penny.penny_optional_column_names() }}
     from jobs
 
 ),
@@ -146,7 +148,8 @@ final as (
         dbt_invocation_id,
         dbt_model_name,
         dbt_node_id,
-        dbt_project_name
+        dbt_project_name,
+{{ penny.penny_optional_column_names() }}
     from filtered
 
 )
@@ -171,5 +174,6 @@ select
     dbt_invocation_id,
     dbt_model_name,
     dbt_node_id,
-    dbt_project_name
+    dbt_project_name,
+{{ penny.penny_optional_column_names(indent='    ') }}
 from final
