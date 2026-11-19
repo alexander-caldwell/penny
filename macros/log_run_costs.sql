@@ -212,10 +212,11 @@
 {% for line in other_lines %}{{ line }}
 {% endfor %}  Queries executed:  {{ total_jobs }} ({{ build_jobs }} build, {{ hook_jobs }} hook, {{ overhead_jobs }} overhead)
   Total TB billed:   {{ total_tb }} TB
-  Estimated cost:    ${{ total_cost }} USD
+  Estimated gross cost: ${{ total_cost }} USD
     builds:          ${{ build_cost }}
     hooks:           ${{ hook_cost }}
     overhead:        ${{ overhead_cost }}
+  Before BigQuery's billing-account free tier (1 TiB/month of on-demand queries).
   Largest model:     {{ largest_gb }} GB ({{ largest_model }})
 ═══════════════════════════════════════════
     {% endset %}

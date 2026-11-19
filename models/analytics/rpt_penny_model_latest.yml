@@ -7,6 +7,8 @@ models:
       external tool consumption (e.g. a future IDE extension). Carries last run,
       30-day average and totals, week-over-week trend, and a traffic-light
       anomaly status. Window metrics are anchored to current_date().
+      Costs are gross estimates before BigQuery's billing-account free tier
+      (1 TiB/month of on-demand queries).
     columns:
       - name: model_name
         description: Model identity (label or destination-table fallback).
@@ -24,9 +26,9 @@ models:
         tests:
           - not_null
       - name: last_run_cost_usd
-        description: Total cost on the most recent run date.
+        description: Gross estimated cost on the most recent run date.
       - name: avg_cost_30d
-        description: Average daily cost over the last 30 days.
+        description: Average daily gross estimated cost over the last 30 days.
       - name: trend_pct_7d
         description: >
           Week-over-week percentage change in cost (last 7 days vs the prior 7
@@ -41,6 +43,6 @@ models:
               arguments:
                 values: ['green', 'amber', 'red']
       - name: total_cost_30d
-        description: Total cost over the last 30 days.
+        description: Gross estimated cost over the last 30 days.
       - name: total_jobs_30d
         description: Total BigQuery jobs over the last 30 days, builds and hooks together.

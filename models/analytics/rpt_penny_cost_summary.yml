@@ -7,6 +7,8 @@ models:
       30-day rolling average cost and an anomaly flag. The rolling average
       excludes the current day and is used as the baseline for anomaly
       detection against penny_anomaly_threshold.
+      Costs are gross estimates before BigQuery's billing-account free tier
+      (1 TiB/month of on-demand queries).
     columns:
       - name: run_date
         description: Calendar date of the runs being summarised.
@@ -32,7 +34,7 @@ models:
       - name: hook_jobs
         description: Hook, grant and other non-build jobs run in the model's context.
       - name: total_cost_usd
-        description: Total estimated cost in USD for the day, builds and hooks together.
+        description: Gross estimated cost in USD for the day, builds and hooks together.
       - name: build_cost_usd
         description: Share of total_cost_usd from build jobs.
       - name: hook_cost_usd

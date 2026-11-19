@@ -5,6 +5,8 @@ models:
     description: >
       Daily cost and usage aggregated to the Rittman Analytics methodology
       layer, one row per layer per day. Built from rpt_penny_cost_summary.
+      Costs are gross estimates before BigQuery's billing-account free tier
+      (1 TiB/month of on-demand queries).
     columns:
       - name: run_date
         description: Calendar date of the runs being summarised.
@@ -30,7 +32,7 @@ models:
       - name: total_jobs
         description: Total BigQuery jobs across all models in this layer for the day.
       - name: total_cost_usd
-        description: Total estimated cost in USD for the layer on this day.
+        description: Gross estimated cost in USD for the layer on this day.
       - name: total_gb_billed
         description: Total GiB billed for the layer on this day.
       - name: avg_execution_seconds

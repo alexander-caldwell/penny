@@ -111,8 +111,9 @@ the single most expensive model — scoped to just that run.
 
 ## Worth knowing
 
-- **Gross cost.** The BigQuery 1 TB/month free tier is account-level, so Penny
-  reports gross cost, not your net invoice.
+- **Gross cost.** Penny estimates costs before BigQuery's monthly free tier of
+  1 TiB of on-demand queries per billing account. The console run summary and
+  BigQuery report table descriptions show this caveat.
 - **Reserved cost is an allocation.** Flat-rate reservations bill a fixed amount
   regardless of usage; Penny apportions it by slot-time consumed.
 - **BigQuery keeps job history for 180 days.** Penny's tables persist beyond
