@@ -230,10 +230,11 @@ With the [console hook](#optional-the-run-summary-console-hook) registered, any
   Models run:        47
   Queries executed:  61 (47 build, 12 hook, 2 overhead)
   Total TB billed:   0.032 TB
-  Estimated cost:    $0.20 USD
+  Estimated gross cost: $0.20 USD
     builds:          $0.18
     hooks:           $0.02
     overhead:        $0.0
+  Before BigQuery's billing-account free tier (1 TiB/month of on-demand queries).
   Largest model:     1.8 GB (fct_orders)
 ═══════════════════════════════════════════
 ```
@@ -492,9 +493,12 @@ regardless of usage, so `slot_ms × rate` is an apportionment of that capacity b
 consumption, not a marginal cost. Set `penny_price_per_slot_hour` to your
 effective edition/commitment rate to make the allocation meaningful.
 
-The BigQuery 1 TB/month free tier is account-level and is **not** netted out in
-the MVP — Penny reports gross cost. Revisit as a monthly project-level adjustment
-in a later phase.
+Penny reports gross estimates before BigQuery's monthly free tier of 1 TiB of
+on-demand query processing per billing account. Penny sees one project, while
+other projects on the same account can use the same allowance. The console run
+summary and the three `rpt_penny_*` table descriptions in BigQuery show this
+caveat. Penny enables dbt's `persist_docs.relation` for those tables by default,
+so existing tables get the descriptions on their next build.
 
 ---
 

@@ -80,6 +80,8 @@ models:
     analytics:
       +materialized: table
       +tags: ["penny", "penny_analytics"]
+      +persist_docs:
+        relation: true
 
 seeds:
   penny:
